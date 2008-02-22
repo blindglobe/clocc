@@ -4,8 +4,12 @@
 ;;; routines to Lisp and compiling the result.  These came with
 ;;; HOMPACK and are used in HOMPACK, among others.
 ;;;
-;;; $Id: blas.system,v 1.6 2006/12/01 04:29:29 rtoy Exp $
+;;; $Id: blas.system,v 1.7 2008/02/22 18:52:53 rtoy Exp $
 ;;; $Log: blas.system,v $
+;;; Revision 1.7  2008/02/22 18:52:53  rtoy
+;;; Make blas-hompack system depend on blas-package so we get all the BLAS
+;;; routines defined in the BLAS package.
+;;;
 ;;; Revision 1.6  2006/12/01 04:29:29  rtoy
 ;;; Create packages for BLAS and LAPACK routines.
 ;;;
@@ -42,12 +46,20 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
+(mk:defsystem blas-package
+  :source-pathname
+  (merge-pathnames (make-pathname :directory '(:relative "blas"))
+		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :components
+  ((:file "blas-package")))
+
 (mk:defsystem blas-hompack
   :source-pathname ;;(translate-logical-pathname "clocc:src;f2cl;packages;blas;")
   (merge-pathnames (make-pathname :directory '(:relative "blas"))
 		   (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
+  :depends-on ("blas-package")
   :compiler-options (:keep-lisp-file t
 		     :relaxed-array-decls nil
 		     :array-type :array
@@ -186,13 +198,6 @@
    (:file "ztrmv")
    (:file "ztrsm")
    (:file "ztrsv")))
-
-(mk:defsystem blas-package
-  :source-pathname
-  (merge-pathnames (make-pathname :directory '(:relative "blas"))
-		   (make-pathname :directory (pathname-directory *load-pathname*)))
-  :components
-  ((:file "blas-package")))
 
 (mk:defsystem blas
   :source-pathname

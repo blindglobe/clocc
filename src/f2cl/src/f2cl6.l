@@ -26,6 +26,10 @@
 ;--------------------------------------------------------------------------
 (in-package :f2cl)
 (eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
+
+(defparameter *f2cl6-version*
+  "$Date: 2008/02/22 22:13:18 $")
+
 ;--------------------------------------------------------------------------  
 ; global stream input for parse-number:
 (defvar *inp* nil)
@@ -639,8 +643,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.43 2007/09/20 15:22:05 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.44 2008/02/22 22:13:18 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.44  2008/02/22 22:13:18  rtoy
+;;; o Add function F2CL-VERSION to get version info.
+;;; o Add version string to each of the files so F2CL-VERSION can get the
+;;;   version info.  The version string is basically the date of when the
+;;;   file was last checked in.
+;;;
 ;;; Revision 1.43  2007/09/20 15:22:05  rtoy
 ;;; Add support to the preprocessor to recognize INCLUDE lines.  This is
 ;;; an extension of Fortran.  The included file must be relative to the

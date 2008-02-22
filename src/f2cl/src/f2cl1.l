@@ -14,7 +14,20 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2008-02 $Date: 2008/02/22 22:01:49 $."))
+  "Use (f2cl-version) instead")
+
+(defparameter *f2cl1-version*
+  "$Date: 2008/02/22 22:13:18 $")
+
+(defun f2cl-version ()
+  (list *f2cl1-version*
+	*f2cl2-version*
+	*f2cl3-version*
+	*f2cl4-version*
+	*f2cl5-version*
+	*f2cl6-version*
+	f2cl-lib::*f2cl-macros-version*))
+
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -2941,8 +2954,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.187 2008/02/22 22:01:49 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.188 2008/02/22 22:13:18 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.188  2008/02/22 22:13:18  rtoy
+;;; o Add function F2CL-VERSION to get version info.
+;;; o Add version string to each of the files so F2CL-VERSION can get the
+;;;   version info.  The version string is basically the date of when the
+;;;   file was last checked in.
+;;;
 ;;; Revision 1.187  2008/02/22 22:01:49  rtoy
 ;;; Update version.
 ;;;

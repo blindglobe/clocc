@@ -19,6 +19,10 @@
   (proclaim '(special *intrinsic-function-names* *external-function-names*
 	      *subprog_name* *subprog-stmt-fns*
 	      *functions-used*)))
+
+(defparameter *f2cl2-version*
+  "$Date: 2008/02/22 22:13:18 $")
+
 ;-----------------------------------------------------------------------------
 ; subst-splice substitutes the list b for the atom a in the list c via splicing
 (defun subst-splice (b a c) 
@@ -466,8 +470,14 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.35 2006/04/28 00:35:29 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.36 2008/02/22 22:13:18 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.36  2008/02/22 22:13:18  rtoy
+;;; o Add function F2CL-VERSION to get version info.
+;;; o Add version string to each of the files so F2CL-VERSION can get the
+;;;   version info.  The version string is basically the date of when the
+;;;   file was last checked in.
+;;;
 ;;; Revision 1.35  2006/04/28 00:35:29  rtoy
 ;;; Modify how expressions and Fortran complex numbers are recognized.  An
 ;;; expression should not contain a comma, and a Fortran complex number

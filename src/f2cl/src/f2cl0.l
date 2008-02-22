@@ -78,13 +78,20 @@
    ;; main routines
    #:f2cl
    #:f2cl-compile
+   #:f2cl-version
    ))
 
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.20 2006/12/01 04:23:43 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.21 2008/02/22 22:13:18 rtoy Rel $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.21  2008/02/22 22:13:18  rtoy
+;;; o Add function F2CL-VERSION to get version info.
+;;; o Add version string to each of the files so F2CL-VERSION can get the
+;;;   version info.  The version string is basically the date of when the
+;;;   file was last checked in.
+;;;
 ;;; Revision 1.20  2006/12/01 04:23:43  rtoy
 ;;; Minor cleanups
 ;;;

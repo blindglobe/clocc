@@ -106,14 +106,25 @@ libodepack.a : $(ODEPACK:.f=.o)
 demo-lsode : opkdemo1.o libodepack.a
 	$(F77) -o $@ $^
 
+demo-lsode.out : demo-lsode
+	demo-lsode | tee demo-lsode.out
+
 demo-lsoda : opkdemo3.o libodepack.a
 	$(F77) -o $@ $^
+
+demo-lsoda.out : demo-lsoda
+	demo-lsoda | tee $@
 
 demo-lsodar : opkdemo4.o libodepack.a
 	$(F77) -o $@ $^
 
 demo-lsodpk : opkdemo5.o libodepack.a
 	$(F77) -o $@ $^
+
+demo-lsodpk.out : demo-lsodpk
+	$(RM) -f demout ccout
+	demo-lsodpk
+	mv demout $@
 
 demo-lsodkr : opkdemo6.o libodepack.a
 	$(F77) -o $@ $^

@@ -77,8 +77,11 @@ mainp : mainp.o d1mach.o libhompack.a libblas.a
 	$(F77) -o mainp $^
 
 ref-mainp.txt : mainp
-	mainp | tee ref-mainp.txt
+	$(RM) -f OUTHP.DAT
+	mainp
+	mv OUTHP.DAT ref-mainp.txt
 
+# Not working.
 mains : mains.o d1mach.o libhompack.a libblas.a 
 	$(F77) -o mains $^
 

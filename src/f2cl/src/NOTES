@@ -3,6 +3,10 @@
 Changes:
 Feb 2007
 ------------
+o I'm not good with keeping version numbers, so add an RCS Id string
+  to each file in a defparameter.  Add new function to list the values
+  of these parameters.  And finally use that in the generated output
+  so we know exactly what version was used to generate the output.
 o Cleaned up the MERGE-DATA-AND-SAVE-INITS.  Handles strings now, and
   no longer checks to see if the number of initial values fills the
   array.  The array is initialized anyway, and 0 (of the appropriate

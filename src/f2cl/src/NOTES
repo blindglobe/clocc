@@ -1,6 +1,25 @@
 -*- Mode: text -*-
 
 Changes:
+Feb 2007
+------------
+o Cleaned up the MERGE-DATA-AND-SAVE-INITS.  Handles strings now, and
+  no longer checks to see if the number of initial values fills the
+  array.  The array is initialized anyway, and 0 (of the appropriate
+  type) is used as the filler.  (Arrays of strings get a string of
+  spaces).
+o Many of the included packages have been rerun with these changes:
+  - quadpack
+  - toms 419
+  - toms 715
+  - toms 717
+  - minpack
+    + lmdif, lmder
+  - hompack
+    + mainf
+  - odepack
+    + lsode, lsoda, lsodpk
+
 Sep 2007
 ------------
 o Extended DO loops were causing extra labels in the Lisp code, which

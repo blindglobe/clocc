@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.192 2008/02/22 22:27:37 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.193 2008/02/22 22:37:02 rtoy Exp $")
 
 (defun f2cl-version ()
   (list *f2cl1-version*
@@ -548,7 +548,7 @@ FILENAME                 File containing Fortran code
 	      (pprint-logical-block (outport version-info :per-line-prefix ";;; ")
 		(format outport "Compiled by f2cl version:~%")
 		(write version-info :stream outport)))
-	    (format outport "~%;;; Using Lisp ~A ~A~%"
+	    (format outport "~2%;;; Using Lisp ~A ~A~%"
 		    (lisp-implementation-type) (lisp-implementation-version))
 	    (let ((*print-case* :downcase))
 	      ;; Insert in-package and declaim, if needed
@@ -2956,8 +2956,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.192 2008/02/22 22:27:37 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.193 2008/02/22 22:37:02 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.193  2008/02/22 22:37:02  rtoy
+;;; Cosmetic change to output comments.
+;;;
 ;;; Revision 1.192  2008/02/22 22:27:37  rtoy
 ;;; Print out f2cl-version info correctly using (f2cl-version).
 ;;;

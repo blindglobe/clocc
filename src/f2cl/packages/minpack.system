@@ -1,8 +1,11 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.11 2006/05/02 22:02:20 rtoy Exp $
+;;; $Id: minpack.system,v 1.12 2008/02/22 18:51:35 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.12  2008/02/22 18:51:35  rtoy
+;;; Add tst-hybrd.
+;;;
 ;;; Revision 1.11  2006/05/02 22:02:20  rtoy
 ;;; Fix typo in source-pathname for minpack-tests.
 ;;;
@@ -129,4 +132,6 @@
 				 :declare-common t)
 	      :components
 	      ((:file "tst-lmdif")
-	       (:file "tst-lmder")))))
+	       (:file "tst-lmder")
+	       ;; HYBRD doesn't seem to be working.
+	       (:file "tst-hybrd")))))

@@ -1,2 +1,11 @@
 *.lisp
+demo-lsoda
+demo-lsodar
+demo-lsode
+demo-lsodi
+demo-lsodis
+demo-lsodkr
+demo-lsodpk
+demo-lsodpkr
+demo-lsoibt
 lib

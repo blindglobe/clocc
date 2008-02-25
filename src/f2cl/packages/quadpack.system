@@ -3,8 +3,13 @@
 ;;; This is a simple defsystem for converting QUADPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: quadpack.system,v 1.7 2006/04/28 01:12:58 rtoy Exp $
+;;; $Id: quadpack.system,v 1.8 2008/02/25 19:40:46 rtoy Exp $
 ;;; $Log: quadpack.system,v $
+;;; Revision 1.8  2008/02/25 19:40:46  rtoy
+;;; o Clean up definition of quadpack logical host.
+;;; o Remove unused code.
+;;; o Add system for quadpack-test.
+;;;
 ;;; Revision 1.7  2006/04/28 01:12:58  rtoy
 ;;; Use *load-pathname to construct the source path (f2cl.system) or a
 ;;; logical pathname to use in the defsystems so that each defsystem can
@@ -38,42 +43,44 @@
 ;; I (rtoy) was stupid and named the Fortran directory Fortran, which
 ;; doesn't work so well with logical pathnames.  This is an attempt to
 ;; convert that appropriately by setting up the correct translation.
-(let ((base (make-pathname :directory (pathname-directory *load-pathname*))))
+(let ((base (if (typep *load-pathname* 'logical-pathname)
+					 (translate-logical-pathname *load-pathname*)
+					 *load-pathname*)))
   (setf (logical-pathname-translations "quadpack")
-	(list (list "**;fortran;*.*.*"
-		    (merge-pathnames (make-pathname :directory '(:relative "quadpack" "Fortran"
+	(list (list "fortran;**;*.*.*"
+		    (merge-pathnames (make-pathname :host (pathname-host base)
+						    :directory '(:relative "quadpack" "Fortran"
 								 :wild-inferiors)
 						    :name :wild
 						    :type :wild)
 				     base))
+	      (list "**;d1mach.*.*"
+		    (merge-pathnames (make-pathname :host (pathname-host base)
+						    :directory '(:relative)
+						    :name :wild
+						    :type :wild)
+				     base))
+	      (list "**;i1mach.*.*"
+		    (merge-pathnames (make-pathname :host (pathname-host base)
+						    :directory '(:relative)
+						    :name :wild
+						    :type :wild)
+				     base))
 	      (list "**;*.*.*"
-		    (merge-pathnames (make-pathname :directory '(:relative :wild-inferiors)
+		    (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
+						    :directory '(:relative "quadpack" :wild-inferiors)
 						    :name :wild :type :wild)
-				     base)))))
+				     *load-pathname*)))))
 
 
 ;; Defsystem for d1mach and i1mach
 (mk:defsystem mach-par
-    :source-pathname (translate-logical-pathname "quadpack:")
+    :source-pathname #p"quadpack:"
     :source-extension "lisp"
     :components
     ((:file "d1mach")
      (:file "i1mach")))
 
-
-#||
-;; Convert a Fortran file to Lisp and compile the Lisp file.
-(defun f2cl-compile (filename &key output-file error-file (array-slicing t) (array-type 'array))
-  (compile-file (f2cl:f2cl filename :array-slicing array-slicing
-		      :array-type array-type)
-		:output-file output-file))
-
-;; Used only if your defsystem doesn't support :compiler-options 
-(defun f2cl-compile-no-slice (filename &key output-file error-file)
-  (compile-file (f2cl:f2cl filename :array-slicing nil :array-type 'array)
-		:output-file output-file :error-file error-file))
-
-||#
 
 (defvar *quadpack-package* nil)
 (defun quadpack-compile (filename &key output-file error-file
@@ -88,12 +95,6 @@
 (mk:define-language :f2cl
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
-
-#+nil
-(mk:define-language :f2cl-no-slice
-    :compiler #'f2cl-compile-no-slice
-    :source-extension "f")
-    
 
 ;; Defsystem for quadpack.
 (mk:defsystem quadpack
@@ -203,6 +204,18 @@
 	       (:file "dqawc"
 		      :depends-on ("dqawce"
 				   "xerror"))))))
+
+;; Simple test for quadpack.  Run (do-tests) to run all of the tests.
+;; If you have TOMS 715 loaded, you can get comparisons between the
+;; quadpack values and the true values for some of the tests where the
+;; true value is in terms of Bessel functions.
+(mk:defsystem quadpack-test
+    :source-pathname (translate-logical-pathname "quadpack:")
+    :depends-on ("mach-par")
+    :components
+    ((:file "quadpack-tests")))
+
+
 
 (mk:defsystem quadpack-lisp
     :source-pathname (translate-logical-pathname "quadpack:quadpack;Fortran;")

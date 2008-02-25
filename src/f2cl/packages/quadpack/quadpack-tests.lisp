@@ -1,8 +1,11 @@
 ;;;
 ;;; Some simple tests of the Quadpack routines, taken from the Quadpack book.
 ;;;
-;;; $Id: quadpack-tests.lisp,v 1.5 2006/04/28 01:35:12 rtoy Exp $
+;;; $Id: quadpack-tests.lisp,v 1.6 2008/02/25 19:27:38 rtoy Rel $
 ;;; $Log: quadpack-tests.lisp,v $
+;;; Revision 1.6  2008/02/25 19:27:38  rtoy
+;;; Fix typo in description of integral for tst1.
+;;;
 ;;; Revision 1.5  2006/04/28 01:35:12  rtoy
 ;;; In TST17 for DQAWC, the absolute error criterion was too small.  It
 ;;; must be strictly positive.  This test runs as expected.
@@ -37,8 +40,8 @@
   (abs (- est true)))
 
 ;; Test 1
-;; Compute integral e^(alpha*x)*log(1/x) from 0 to 1.  The analytical
-;; solution is e^((1+alpha)^(-2)).
+;; Compute integral (x^alpha)*log(1/x) from 0 to 1.  The analytical
+;; solution is (1+alpha)^(-2).
 ;;
 ;; alpha = -0.9(0.1)0(0.2)2.6
 ;; QAG with key 1, 3, 6
@@ -68,9 +71,9 @@
     (format t "Test integral 1:~%")
     (format t "
            1
-          /                                      -2
-          [    alpha x                (alpha + 1) 
-        - I  %E        LOG(x) dx =  %E            
+          /                                           -2
+          [    alpha log(x)                (alpha + 1) 
+        - i  %e            log(x) dx =  %e            
           ]
           /
            0

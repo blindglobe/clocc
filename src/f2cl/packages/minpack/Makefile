@@ -36,7 +36,7 @@ run-lmder : tst-lmder
 	tst-lmder < lmdif-input.dat | tee lmder-ref.txt
 
 run-hybrd : tst-hybrd
-	tst-hybrd < lmdif-input.dat | tee hybrd-ref.txt
+	tst-hybrd < hybrd-input.dat | tee hybrd-ref.txt
 
 clean :
 	rm -f *.o tst-hybrd tst-lmder tst-lmdif

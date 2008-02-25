@@ -1,8 +1,27 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.12 2008/02/22 18:51:35 rtoy Exp $
+;;; $Id: minpack.system,v 1.13 2008/02/25 17:11:43 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.13  2008/02/25 17:11:43  rtoy
+;;; Updates to make hybrd test work.  The Lisp translation works.
+;;;
+;;; minpack.system:
+;;; o Cleanup definition of logical pathname
+;;; o Add some comments
+;;; o Add new defsystem to compile hybrd test.  This test defines some
+;;;   functions and structures that are incompatible with lmdif test.
+;;;
+;;; minpack/Makefile
+;;; o tst-hybrd uses a different input file.
+;;;
+;;; minpack/hybrd-ref.txt
+;;; o Update with correct values.
+;;;
+;;; minpack/run-minpack-tests.lisp:
+;;; o Add new function to run the hybrd test.  (Should add hybrj test
+;;;   too.)
+;;;
 ;;; Revision 1.12  2008/02/22 18:51:35  rtoy
 ;;; Add tst-hybrd.
 ;;;
@@ -52,18 +71,14 @@
 ;;; Initial version.
 ;;;
 ;; Convert a Fortran file to Lisp and compile the Lisp file.
-#+nil
-(defun f2cl-compile (filename &key output-file error-file (array-slicing t) (array-type 'array))
-  (compile-file (f2cl filename :array-slicing array-slicing
-		      :array-type array-type)
-		:output-file output-file :error-file error-file))
 
-(let ((base (make-pathname :directory (pathname-directory *load-pathname*))))
-  (setf (logical-pathname-translations "minpack")
-	(list (list "**;*.*.*"
-		    (merge-pathnames (make-pathname :directory '(:relative "minpack" :wild-inferiors)
-						    :name :wild :type :wild)
-				     base)))))
+;; Create minpack logical host
+(setf (logical-pathname-translations "minpack")
+      (list (list "**;*.*.*"
+		  (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
+						  :directory '(:relative "minpack" :wild-inferiors)
+						  :name :wild :type :wild)
+				   *load-pathname*))))
 
 (mk:define-language :f2cl
     :compiler #'f2cl:f2cl-compile
@@ -110,6 +125,10 @@
 	       (:file "hybrj1" :depends-on ("hybrj"))
 	       ))))
 
+;; (minpack::run-minpack-tests) will run the tst-lmdif and tst-lmder
+;; tests.  (When the STOP statement is reached, select the continue
+;; restart to continue.)  Compare the output in tlmdif.txt to
+;; lmdif-ref.txt and tlmder.txt to lmder-ref.txt.
 (mk:defsystem minpack-tests
     :source-pathname "minpack:"
     :components
@@ -135,3 +154,29 @@
 	       (:file "tst-lmder")
 	       ;; HYBRD doesn't seem to be working.
 	       (:file "tst-hybrd")))))
+
+;; This test defines things that are incompatible with tst-lmdif and
+;; tst-lmder.  Hence, you can't run this test with others.
+
+(mk:defsystem minpack-test-hybrd
+    :source-pathname "minpack:"
+    :components
+    ((:module "main"
+	      :source-pathname ""
+	      :package :minpack
+	      :components
+	      ((:file "run-minpack-tests")))
+     (:module "tests"
+	      :source-pathname ""
+	      :source-extension "f"
+	      :package :minpack
+	      :language :f2cl
+	      :compiler-options (:include-comments t
+				 :keep-lisp-file t
+				 :relaxed-array-decls nil
+				 :array-type :array
+				 :array-slicing t
+				 :package :minpack
+				 :declare-common t)
+	      :components
+	       (:file "tst-hybrd"))))

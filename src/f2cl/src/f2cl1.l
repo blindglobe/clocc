@@ -17,7 +17,15 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.193 2008/02/22 22:37:02 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.194 2008/02/26 18:41:35 rtoy Exp $")
+
+;; Forward declarations.
+(defvar *f2cl2-version*)
+(defvar *f2cl3-version*)
+(defvar *f2cl4-version*)
+(defvar *f2cl5-version*)
+(defvar *f2cl6-version*)
+(defvar f2cl-lib::*f2cl-macros-version*)
 
 (defun f2cl-version ()
   (list *f2cl1-version*
@@ -2956,8 +2964,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.193 2008/02/22 22:37:02 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.194 2008/02/26 18:41:35 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.194  2008/02/26 18:41:35  rtoy
+;;; Add defvars for the version variables so we don't get complaints.
+;;;
 ;;; Revision 1.193  2008/02/22 22:37:02  rtoy
 ;;; Cosmetic change to output comments.
 ;;;

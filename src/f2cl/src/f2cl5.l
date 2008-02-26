@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.181 2008/02/22 22:52:33 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.182 2008/02/26 04:18:25 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -1114,8 +1114,14 @@
 				 array-element-inits
 				 :key #'cadar)))))
 	      ((and (listp (second item))
-		    (eq 'f2cl-init-string (first (second item))))
-	       ;; Initializing an array of strings.  We don't do
+		    (eq 'f2cl-init-string (first (second item)))
+		    (not (fourth (second item))))
+	       ;; We have something like
+	       ;;
+	       ;; (<var> (f2cl-init-string (<dims>) (<stringlen>) <inits>))
+	       ;;
+	       ;; Initializing an array of strings, but only if the
+	       ;; initializer isn't already given.  We don't do
 	       ;; anything special right now.
 	       (let ((inits (find-inits (first item))))
 		 #+nil
@@ -3734,8 +3740,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.181 2008/02/22 22:52:33 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.182 2008/02/26 04:18:25 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.182  2008/02/26 04:18:25  rtoy
+;;; If an initializer for a string array is already given, don't do
+;;; anything.  (Do we need to do the same for an number array
+;;; initializer?)
+;;;
 ;;; Revision 1.181  2008/02/22 22:52:33  rtoy
 ;;; Oops.  check_new_vbles was skipping over the first arg in a function
 ;;; call.

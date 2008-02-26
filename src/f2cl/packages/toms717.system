@@ -5,13 +5,21 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
+(setf (logical-pathname-translations "toms717")
+      (list (list "**;*.*.*"
+		  (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
+						  :directory '(:relative "toms" "717" :wild-inferiors)
+						  :name :wild :type :wild)
+				   *load-pathname*))))
+
 (mk:defsystem toms717
-    :source-pathname (merge-pathnames (make-pathname :directory '(:relative "toms"))
-				      (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-pathname (pathname "toms717:")
     :source-extension "f"
     :language :f2cl
     :components
     ((:module "717"
+	      :source-pathname ""
+	      :binary-pathname ""
 	      :components
 	      (
 	       ;;(:file "dglfg")
@@ -125,16 +133,14 @@
 	       ))))
 
 (mk:defsystem toms717-tests
-    :source-pathname (merge-pathnames (make-pathname :directory '(:relative "toms"))
-				      (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-pathname (pathname "toms717:")
     :source-extension "f"
     :language :f2cl
     :depends-on ("toms717")
     :components
     ((:module "tests"
-	      :source-pathname "717"
-	      :binary-pathname "717"
-	      :source-extension "f"
+	      :source-pathname ""
+	      :binary-pathname ""
 	      :language :f2cl
 	      :components
 	      (

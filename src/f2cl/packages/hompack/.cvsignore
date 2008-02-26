@@ -1,6 +1,7 @@
 *.ppcf
 *.sparcf
 *.x86f
+OUTHP.DAT
 dcpose.lisp
 divp.lisp
 f.lisp
@@ -25,6 +26,7 @@ mainf
 mainf.lisp
 mainp
 mainp.lisp
+mains
 mains.lisp
 mfacds.lisp
 mulp.lisp
@@ -63,3 +65,4 @@ tangnf.lisp
 tangns.lisp
 tangqf.lisp
 tangqs.lisp
+upqrqf.lisp

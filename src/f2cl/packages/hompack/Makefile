@@ -82,7 +82,7 @@ ref-mainp.txt : mainp
 	mv OUTHP.DAT ref-mainp.txt
 
 # Not working.
-mains : mains.o d1mach.o libhompack.a libblas.a 
+mains : mains.o rhojs.o d1mach.o libhompack.a libblas.a 
 	$(F77) -o mains $^
 
 ref-mains.txt : mains

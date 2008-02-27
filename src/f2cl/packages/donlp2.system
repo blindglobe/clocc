@@ -7,9 +7,23 @@
     :compiler #'donlp2-compiler
     :source-extension "f")
 
+
+;; To run any test, use (donlp2).  This means you have to
+;; reload/recompile if you want to run a different test.
+;;
+;; The output goes wherever the current directoy is for the Lisp that
+;; executes the test.
+
+;; This currently won't work if
+;; f2cl::*enable-merging-data-and-save-init* is non-NIL.  Turn this
+;; off.
+(eval-when (:load-toplevel :compile-toplevel :execute)
+(setf f2cl::*enable-merging-data-and-save-init* nil)
+)
+
 ;; Works.  Output in ANTENNA1.*
 (mk:defsystem ex-antenna1
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -22,7 +36,7 @@
 
 ;; Works.  Output in HS101XXX.*
 (mk:defsystem ex-hs101
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -35,7 +49,7 @@
 
 ;; Works.  Output in HS102XXX.*
 (mk:defsystem ex-hs102
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -48,7 +62,7 @@
 
 ;; Works.  Output in HS103XXX.*
 (mk:defsystem ex-hs103
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -65,7 +79,7 @@
 ;; Fortran code.  Some numbers appear to be only agree to about 6
 ;; digits or so.
 (mk:defsystem ex-amplqp
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -79,7 +93,7 @@
 ;; Output in ALKYLATI.*.  Output is messed up a bit, but the final
 ;; results match the Fortran code results.
 (mk:defsystem ex-alkylati
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -96,7 +110,7 @@
 ;; The multipliers are quite a bit different. and the number of
 ;; evaluations are too.
 (mk:defsystem ex-fractf77new
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -109,7 +123,7 @@
 
 ;; Works just fine.  Output in GIRDERDE.*.
 (mk:defsystem ex-girder
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -122,7 +136,7 @@
 
 ;; Works.  Output in NMCFQMHH.*
 (mk:defsystem ex-irreg1
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -135,7 +149,7 @@
 
 ;; Works.  Output in NMFCQ11X.*
 (mk:defsystem ex-irreg2
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -148,7 +162,7 @@
 
 ;; Works.  Output in NET1AMPL.*
 (mk:defsystem ex-net1
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -171,7 +185,7 @@
 ;; match except for a very small difference in one intermediate
 ;; result.
 (mk:defsystem ex-chemequi
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -185,7 +199,7 @@
 ;; Works.  Call (/blockdata/) before running (donlp2)
 ;; Output in BOXPARID.*.
 (mk:defsystem ex-boxparam
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -202,7 +216,7 @@
 ;; running (donlp2) so that the block data subprogram actually
 ;; initializes the necessary items.
 (mk:defsystem ex-betting
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -219,7 +233,7 @@
 ;;
 ;; .Works.
 (mk:defsystem ex-barnes
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -235,7 +249,7 @@
 ;;
 ;; .Works.
 (mk:defsystem ex-dembo1as
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -251,7 +265,7 @@
 ;;
 ;; .Works.
 (mk:defsystem ex-dembo4
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -267,7 +281,7 @@
 ;;
 ;; .Works.
 (mk:defsystem ex-dembo7
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -284,7 +298,7 @@
 ;;
 ;; where NX is a PARAMETER..
 (mk:defsystem ex-hs109
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -300,7 +314,7 @@
 ;;
 ;; .Works.
 (mk:defsystem ex-maratos
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -316,7 +330,7 @@
 ;;
 ;; .Works.
 (mk:defsystem ex-paviani2
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -332,7 +346,7 @@
 ;;       DATA (A(I),A(I+7),I=1,7)/
 ;;
 (mk:defsystem ex-tp383mod
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -345,7 +359,7 @@
 
 ;; Works.  Output in UNDEFEXA.*.
 (mk:defsystem ex-undefexa
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -358,7 +372,7 @@
 
 ;; Works.  Output in UNDEFEXA.*.
 (mk:defsystem ex-weaponas
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -370,7 +384,7 @@
 		    :compiler-options (:declare-common t))))))
 
 (mk:defsystem donlp2
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :components
   ((:module donlp2
 	    :source-extension "f"

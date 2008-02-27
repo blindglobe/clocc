@@ -4,8 +4,11 @@
 ;;; routines to Lisp and compiling the result.  These came with
 ;;; HOMPACK and are used in HOMPACK, among others.
 ;;;
-;;; $Id: blas.system,v 1.7 2008/02/22 18:52:53 rtoy Exp $
+;;; $Id: blas.system,v 1.8 2008/02/27 18:44:03 rtoy Rel $
 ;;; $Log: blas.system,v $
+;;; Revision 1.8  2008/02/27 18:44:03  rtoy
+;;; Add logical pathname
+;;;
 ;;; Revision 1.7  2008/02/22 18:52:53  rtoy
 ;;; Make blas-hompack system depend on blas-package so we get all the BLAS
 ;;; routines defined in the BLAS package.
@@ -46,17 +49,21 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
+(setf (logical-pathname-translations "blas")
+      (list (list "**;*.*.*"
+		  (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
+						  :directory '(:relative "blas" :wild-inferiors)
+						  :name :wild :type :wild)
+				   *load-pathname*))))
+
+
 (mk:defsystem blas-package
-  :source-pathname
-  (merge-pathnames (make-pathname :directory '(:relative "blas"))
-		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-pathname (pathname "blas:")
   :components
   ((:file "blas-package")))
 
 (mk:defsystem blas-hompack
-  :source-pathname ;;(translate-logical-pathname "clocc:src;f2cl;packages;blas;")
-  (merge-pathnames (make-pathname :directory '(:relative "blas"))
-		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-pathname (pathname "blas:")
   :source-extension "f"
   :language :f2cl
   :depends-on ("blas-package")
@@ -76,9 +83,7 @@
    (:file "idamax")))
 
 (mk:defsystem blas-real
-  :source-pathname
-  (merge-pathnames (make-pathname :directory '(:relative "blas"))
-		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-pathname (pathname "blas:")
   :source-extension "f"
   :depends-on ("blas-hompack")
   :language :f2cl
@@ -150,9 +155,7 @@
    (:file "xerbla")))
    
 (mk:defsystem blas-complex
-  :source-pathname
-  (merge-pathnames (make-pathname :directory '(:relative "blas"))
-		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-pathname (pathname "blas:")
   :source-extension "f"
   :depends-on ("blas-real")
   :language :f2cl
@@ -200,8 +203,6 @@
    (:file "ztrsv")))
 
 (mk:defsystem blas
-  :source-pathname
-  (merge-pathnames (make-pathname :directory '(:relative "blas"))
-		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-pathname (pathname "blas:")
   :source-extension "f"
   :depends-on ("blas-package" "blas-real" "blas-complex"))

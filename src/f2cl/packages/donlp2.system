@@ -14,13 +14,6 @@
 ;; The output goes wherever the current directoy is for the Lisp that
 ;; executes the test.
 
-;; This currently won't work if
-;; f2cl::*enable-merging-data-and-save-init* is non-NIL.  Turn this
-;; off.
-(eval-when (:load-toplevel :compile-toplevel :execute)
-(setf f2cl::*enable-merging-data-and-save-init* nil)
-)
-
 ;; Works.  Output in ANTENNA1.*
 (mk:defsystem ex-antenna1
   :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))

@@ -1,8 +1,11 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.13 2008/02/25 17:11:43 rtoy Exp $
+;;; $Id: minpack.system,v 1.14 2008/02/28 20:01:06 rtoy Rel $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.14  2008/02/28 20:01:06  rtoy
+;;; Oops. tst-hybrd has its own defsystem.
+;;;
 ;;; Revision 1.13  2008/02/25 17:11:43  rtoy
 ;;; Updates to make hybrd test work.  The Lisp translation works.
 ;;;
@@ -151,9 +154,7 @@
 				 :declare-common t)
 	      :components
 	      ((:file "tst-lmdif")
-	       (:file "tst-lmder")
-	       ;; HYBRD doesn't seem to be working.
-	       (:file "tst-hybrd")))))
+	       (:file "tst-lmder")))))
 
 ;; This test defines things that are incompatible with tst-lmdif and
 ;; tst-lmder.  Hence, you can't run this test with others.

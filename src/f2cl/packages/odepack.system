@@ -80,7 +80,7 @@
      (:file "dlsodi"
 	    :depends-on ("dstodi" "dainvg"))
      (:file "dlsodis"
-	    :depends-on ("dstodi"))
+	    :depends-on ("dstodi" "dainvgs"))
      (:file "dlsodkr"
 	    :depends-on ("drchek" "dstoka")
 	    :compiler-options (:common-as-array t :declare-common t))

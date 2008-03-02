@@ -1251,3 +1251,31 @@ Bugs:
 * PARAMETER variables may not be arranged correctly.  This may require 
   some hand-tweaking of the output lisp file.
 
+* Certain DO loops with branches are not translated correctly.  For
+  example:
+
+      do 10 k = 1, 2
+         do 10 m = 1, 5
+            if (m .eq. 3) goto 10
+            print *, k, m
+   10    continue
+      end
+
+  The translated version prints 
+
+ 1 1
+ 1 2
+
+  It should print more.  This is because the DO loops have the same
+  continue line and there is a go to that line.  If Fortran, this
+  means the inner loop should continue.  However, the Lisp version
+  branches completely out of both.  The solution is simple.  Change
+  the loop to be
+
+      do 20 k = 1, 2
+         do 10 m = 1, 5
+            if (m .eq. 3) goto 10
+            print *, k, m
+   10    continue
+   20 continue
+      end

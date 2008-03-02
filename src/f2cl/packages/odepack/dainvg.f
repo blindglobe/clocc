@@ -54,11 +54,11 @@ C
 C
       MLP1 = ML + 1
       CALL ADDA ( NEQ, T, Y, ML, MU, PW(MLP1), NROWPW )
-      CALL DGBFA ( PW, NROWPW, NEQ(1), ML, MU, IPVT, IER )
+      CALL DGBFA ( PW, NROWPW, NEQ, ML, MU, IPVT, IER )
       IF (IER .EQ. 0) GO TO 120
          IER = -IER
          RETURN
-  120 CALL DGBSL ( PW, NROWPW, NEQ(1), ML, MU, IPVT, YDOT, 0 )
+  120 CALL DGBSL ( PW, NROWPW, NEQ, ML, MU, IPVT, YDOT, 0 )
       RETURN
 C----------------------- End of Subroutine DAINVG ----------------------
       END

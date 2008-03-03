@@ -1,0 +1,218 @@
+ Demonstration program for DLSODPK package
+
+ Food web problem with ns species, ns =   6
+ Predator-prey interaction and diffusion on a 2-d square
+
+ Mesh dimensions (mx,my) =   6   6
+ Total system size is neq =    216
+
+
+ Matrix parameters:  a =  0.1000E+01   e =  0.1000E+05   g =  0.5000E-06
+                     b =  0.1000E+01
+
+ Diffusion coefficients: dprey =  0.1000E+01   dpred =  0.5000E+00
+ Rate parameter alpha =  0.1000E+01
+
+
+ Preconditioning uses interaction-only block-diagonal matrix
+ with block-grouping, and Gauss-Seidel iterations
+
+ Number of diagonal block groups = ngrp =   4   (ngx by ngy, ngx = 2  ngy = 2 )
+
+ G-S preconditioner uses itmax iterations, itmax =  5
+
+ Tolerance parameters: rtol =  0.10E-04   atol =  0.10E-04
+
+
+--------------------------------------------------------------------------------
+
+ Solution with mf = 10
+
+   t       nstep  nfe  nni  nli  npe  nq    h          avdim    ncf rate    lcf rate
+  0.10E-07    3     4    0    0    0   2   0.10E-06   0.00E+00  0.00E+00    0.00E+00
+  0.10E-06    3     4    0    0    0   2   0.10E-06   0.00E+00  0.00E+00    0.00E+00
+  0.10E-05    7    13    0    0    0   3   0.35E-06   0.00E+00  0.00E+00    0.00E+00
+  0.10E-04   22    41    0    0    0   6   0.10E-05   0.00E+00  0.00E+00    0.00E+00
+  0.10E-03   81   155    0    0    0   2   0.24E-05   0.00E+00  0.34E-01    0.00E+00
+  0.10E-02  397   900    0    0    0   2   0.43E-05   0.00E+00  0.22E+00    0.00E+00
+
+
+ Final statistics for this run:
+ rwork size =    3476   iwork size =    30
+ number of time steps            =  397
+ number of f evaluations         =  900
+ number of preconditioner evals. =    0
+ number of preconditioner solves =    0
+ number of nonlinear iterations  =    0
+ number of linear iterations     =    0
+ average subspace dimension  =  0.0000
+   73 nonlinear conv. failures,    0 linear conv. failures
+
+
+--------------------------------------------------------------------------------
+
+ Solution with mf = 21
+
+   t       nstep  nfe  nni  nli  npe  nq    h          avdim    ncf rate    lcf rate
+  0.10E-07    3     5    3    1    2   2   0.65E-07   0.33E+00  0.00E+00    0.00E+00
+  0.10E-06    4     8    5    2    2   2   0.65E-07   0.50E+00  0.00E+00    0.00E+00
+  0.10E-05   10    22   13    8    4   3   0.37E-06   0.75E+00  0.00E+00    0.00E+00
+  0.10E-04   33    78   43   34    6   5   0.51E-06   0.87E+00  0.00E+00    0.00E+00
+  0.10E-03  112   270  134  135   14   5   0.60E-05   0.11E+01  0.00E+00    0.00E+00
+  0.10E-02  131   321  156  164   18   2   0.35E-03   0.13E+01  0.00E+00    0.00E+00
+  0.10E-01  138   343  167  175   20   3   0.18E-02   0.10E+01  0.00E+00    0.00E+00
+  0.10E+00  162   402  194  207   23   4   0.71E-02   0.12E+01  0.00E+00    0.00E+00
+  0.10E+01  206   540  242  297   27   4   0.47E-01   0.19E+01  0.00E+00    0.00E+00
+  0.20E+01  221   608  259  348   29   4   0.96E-01   0.30E+01  0.00E+00    0.00E+00
+  0.30E+01  230   656  269  386   30   4   0.16E+00   0.38E+01  0.00E+00    0.00E+00
+  0.40E+01  236   694  276  417   31   4   0.21E+00   0.44E+01  0.00E+00    0.29E+00
+  0.50E+01  240   718  280  437   31   4   0.27E+00   0.50E+01  0.00E+00    0.75E+00
+  0.60E+01  244   742  284  457   31   4   0.27E+00   0.50E+01  0.00E+00    0.75E+00
+  0.70E+01  247   766  288  477   32   4   0.36E+00   0.50E+01  0.00E+00    0.10E+01
+  0.80E+01  250   790  292  497   33   4   0.48E+00   0.50E+01  0.00E+00    0.10E+01
+  0.90E+01  252   802  294  507   33   4   0.48E+00   0.50E+01  0.00E+00    0.10E+01
+  0.10E+02  254   814  296  517   33   4   0.48E+00   0.50E+01  0.00E+00    0.10E+01
+
+
+ Final statistics for this run:
+ rwork size =    3861   iwork size =    59
+ number of time steps            =  254
+ number of f evaluations         =  814
+ number of preconditioner evals. =   33
+ number of preconditioner solves = 1554
+ number of nonlinear iterations  =  296
+ number of linear iterations     =  517
+ average subspace dimension  =  1.7466
+    0 nonlinear conv. failures,   20 linear conv. failures
+
+
+--------------------------------------------------------------------------------
+
+ Solution with mf = 22
+
+   t       nstep  nfe  nni  nli  npe  nq    h          avdim    ncf rate    lcf rate
+  0.10E-07    3     5    3    1    2   2   0.65E-07   0.33E+00  0.00E+00    0.00E+00
+  0.10E-06    4     8    5    2    2   2   0.65E-07   0.50E+00  0.00E+00    0.00E+00
+  0.10E-05   10    22   13    8    4   3   0.37E-06   0.75E+00  0.00E+00    0.00E+00
+  0.10E-04   33    78   43   34    6   5   0.51E-06   0.87E+00  0.00E+00    0.00E+00
+  0.10E-03  112   270  134  135   14   5   0.60E-05   0.11E+01  0.00E+00    0.00E+00
+  0.10E-02  131   321  156  164   18   2   0.35E-03   0.13E+01  0.00E+00    0.00E+00
+  0.10E-01  138   343  167  175   20   3   0.18E-02   0.10E+01  0.00E+00    0.00E+00
+  0.10E+00  162   402  194  207   23   4   0.71E-02   0.12E+01  0.00E+00    0.00E+00
+  0.10E+01  206   543  242  300   27   4   0.47E-01   0.19E+01  0.00E+00    0.00E+00
+  0.20E+01  221   612  259  352   29   4   0.95E-01   0.31E+01  0.00E+00    0.00E+00
+  0.30E+01  230   661  269  391   30   4   0.16E+00   0.39E+01  0.00E+00    0.10E+00
+  0.40E+01  236   695  275  419   30   4   0.20E+00   0.47E+01  0.00E+00    0.67E+00
+  0.50E+01  241   731  281  449   31   4   0.27E+00   0.50E+01  0.00E+00    0.10E+01
+  0.60E+01  244   749  284  464   31   4   0.27E+00   0.50E+01  0.00E+00    0.10E+01
+  0.70E+01  247   773  288  484   32   4   0.37E+00   0.50E+01  0.00E+00    0.10E+01
+  0.80E+01  250   797  292  504   33   3   0.51E+00   0.50E+01  0.00E+00    0.10E+01
+  0.90E+01  252   809  294  514   33   3   0.51E+00   0.50E+01  0.00E+00    0.10E+01
+  0.10E+02  254   827  297  529   34   2   0.79E+00   0.50E+01  0.00E+00    0.10E+01
+
+
+ Final statistics for this run:
+ rwork size =    3877   iwork size =    54
+ number of time steps            =  254
+ number of f evaluations         =  827
+ number of preconditioner evals. =   34
+ number of preconditioner solves = 1580
+ number of nonlinear iterations  =  297
+ number of linear iterations     =  529
+ average subspace dimension  =  1.7811
+    0 nonlinear conv. failures,   27 linear conv. failures
+
+
+--------------------------------------------------------------------------------
+
+ Solution with mf = 23
+
+   t       nstep  nfe  nni  nli  npe  nq    h          avdim    ncf rate    lcf rate
+  0.10E-07    3     5    3    1    2   2   0.65E-07   0.33E+00  0.00E+00    0.00E+00
+  0.10E-06    4     8    5    2    2   2   0.65E-07   0.50E+00  0.00E+00    0.00E+00
+  0.10E-05   10    22   13    8    4   3   0.37E-06   0.75E+00  0.00E+00    0.00E+00
+  0.10E-04   33    78   43   34    6   5   0.51E-06   0.87E+00  0.00E+00    0.00E+00
+  0.10E-03  112   272  134  137   14   5   0.60E-05   0.11E+01  0.00E+00    0.00E+00
+  0.10E-02  131   324  156  167   18   2   0.35E-03   0.14E+01  0.00E+00    0.00E+00
+  0.10E-01  139   360  166  193   20   3   0.15E-02   0.26E+01  0.00E+00    0.40E+00
+  0.10E+00  174   527  212  314   29   3   0.11E-02   0.26E+01  0.11E+00    0.35E+00
+  0.10E+01  228   826  278  547   39   5   0.22E-01   0.35E+01  0.37E-01    0.41E+00
+  0.20E+01  281  1244  356  887   67   3   0.25E-01   0.44E+01  0.21E+00    0.74E+00
+
+
+ Final statistics for this run:
+ rwork size =    3404   iwork size =    54
+ number of time steps            =  281
+ number of f evaluations         = 1244
+ number of preconditioner evals. =   67
+ number of preconditioner solves =  887
+ number of nonlinear iterations  =  356
+ number of linear iterations     =  887
+ average subspace dimension  =  2.4916
+   17 nonlinear conv. failures,  105 linear conv. failures
+
+
+--------------------------------------------------------------------------------
+
+ Solution with mf = 24
+
+   t       nstep  nfe  nni  nli  npe  nq    h          avdim    ncf rate    lcf rate
+  0.10E-07    3     5    3    1    2   2   0.65E-07   0.33E+00  0.00E+00    0.00E+00
+  0.10E-06    4     8    5    2    2   2   0.65E-07   0.50E+00  0.00E+00    0.00E+00
+  0.10E-05   10    22   13    8    4   3   0.37E-06   0.75E+00  0.00E+00    0.00E+00
+  0.10E-04   33    78   43   34    6   5   0.51E-06   0.87E+00  0.00E+00    0.00E+00
+  0.10E-03  112   270  134  135   14   5   0.60E-05   0.11E+01  0.00E+00    0.00E+00
+  0.10E-02  131   321  156  164   18   2   0.35E-03   0.13E+01  0.00E+00    0.00E+00
+  0.10E-01  139   356  167  188   20   3   0.16E-02   0.22E+01  0.00E+00    0.27E+00
+  0.10E+00  162   412  193  218   23   4   0.71E-02   0.12E+01  0.00E+00    0.00E+00
+  0.10E+01  210   635  247  387   31   4   0.30E-01   0.31E+01  0.42E-01    0.30E+00
+  0.20E+01  257   993  316  676   55   3   0.50E-01   0.42E+01  0.23E+00    0.68E+00
+
+
+ Final statistics for this run:
+ rwork size =    3404   iwork size =    54
+ number of time steps            =  257
+ number of f evaluations         =  993
+ number of preconditioner evals. =   55
+ number of preconditioner solves =  676
+ number of nonlinear iterations  =  316
+ number of linear iterations     =  676
+ average subspace dimension  =  2.1392
+   13 nonlinear conv. failures,   66 linear conv. failures
+
+
+--------------------------------------------------------------------------------
+
+ Solution with mf = 29
+
+   t       nstep  nfe  nni  nli  npe  nq    h          avdim    ncf rate    lcf rate
+  0.10E-07    3     4    3    0    2   2   0.65E-07   0.00E+00  0.00E+00    0.00E+00
+  0.10E-06    4     6    5    0    2   2   0.65E-07   0.00E+00  0.00E+00    0.00E+00
+  0.10E-05   10    14   13    0    4   3   0.37E-06   0.00E+00  0.00E+00    0.00E+00
+  0.10E-04   32    42   41    0    6   5   0.56E-06   0.00E+00  0.00E+00    0.00E+00
+  0.10E-03  114   135  134    0   13   5   0.47E-05   0.00E+00  0.00E+00    0.00E+00
+  0.10E-02  136   162  161    0   18   2   0.30E-03   0.00E+00  0.00E+00    0.00E+00
+  0.10E-01  144   173  172    0   20   3   0.16E-02   0.00E+00  0.00E+00    0.00E+00
+  0.10E+00  168   200  199    0   23   4   0.79E-02   0.00E+00  0.00E+00    0.00E+00
+  0.10E+01  245   353  352    0   39   2   0.17E-01   0.00E+00  0.13E-01    0.00E+00
+  0.20E+01  289   442  439    0   56   4   0.62E-01   0.00E+00  0.68E-01    0.00E+00
+  0.30E+01  333   570  567    0   84   1   0.16E-01   0.00E+00  0.25E+00    0.00E+00
+  0.40E+01  363   630  627    0   93   3   0.11E+00   0.00E+00  0.10E+00    0.00E+00
+  0.50E+01  388   704  701    0  111   1   0.36E-01   0.00E+00  0.32E+00    0.00E+00
+  0.60E+01  408   754  751    0  122   1   0.56E-01   0.00E+00  0.20E+00    0.00E+00
+  0.70E+01  428   812  809    0  137   1   0.50E-01   0.00E+00  0.30E+00    0.00E+00
+  0.80E+01  434   818  815    0  139   2   0.31E+00   0.00E+00  0.00E+00    0.00E+00
+  0.90E+01  451   869  864    0  157   1   0.59E+00   0.00E+00  0.35E+00    0.00E+00
+  0.10E+02  453   871  866    0  158   1   0.17E+01   0.00E+00  0.00E+00    0.00E+00
+
+
+ Final statistics for this run:
+ rwork size =    2756   iwork size =    54
+ number of time steps            =  453
+ number of f evaluations         =  871
+ number of preconditioner evals. =  158
+ number of preconditioner solves =  849
+ number of nonlinear iterations  =  866
+ number of linear iterations     =    0
+ average subspace dimension  =  0.0000
+   42 nonlinear conv. failures,    0 linear conv. failures

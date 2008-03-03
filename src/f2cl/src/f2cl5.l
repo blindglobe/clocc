@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.183 2008/02/28 20:06:47 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.184 2008/03/03 17:03:09 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2875,10 +2875,11 @@
     ;;(format t "lun-part = ~A~%" lun-part)
     ;;(format t "fmt-part = ~A~%" fmt-part)
 
-    (let ((args (if (cdddr x)
-		    (mapcar #'parse-output-argument 
-			    (list-split '|,| (cdddr x)))
-		    nil)))
+    (let ((args (check_new_vbles
+		 (if (cdddr x)
+		     (mapcar #'parse-output-argument 
+			     (list-split '|,| (cdddr x)))
+		     nil))))
       ;; If there are no items to be written, make sure args is NIL,
       ;; so fformat knows there are no items.
       `((fformat ,(parse_format_dest lun-part)
@@ -2891,10 +2892,11 @@
 ;;               or: '(PRINT 9000 |,| X |,| Y)
 
 (defun parse-print (x)
-  (let ((args (if (cdddr x)
-		  (mapcar #'parse-output-argument 
-			  (list-split '|,| (cdddr x)))
-		  nil)))
+  (let ((args (check_new_vbles
+	       (if (cdddr x)
+		   (mapcar #'parse-output-argument 
+			   (list-split '|,| (cdddr x)))
+		   nil))))
     ;; If there are no items to be written, make sure args is NIL,
     ;; so fformat knows there are no items.
     `((fformat t
@@ -3773,8 +3775,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.183 2008/02/28 20:06:47 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.184 2008/03/03 17:03:09 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.184  2008/03/03 17:03:09  rtoy
+;;; Need to check for new variables in WRITE and PRINT statements.
+;;;
 ;;; Revision 1.183  2008/02/28 20:06:47  rtoy
 ;;; MERGE-DATA-AND-SAVE-INITS:
 ;;; o Extract the array dimensions carefully.  We can only the the

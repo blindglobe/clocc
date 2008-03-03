@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.195 2008/03/02 03:26:07 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.196 2008/03/03 18:00:05 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1824,6 +1824,13 @@ FILENAME                 File containing Fortran code
 	     ;; is.  We want the first element of the array as the
 	     ;; arg.
 	     (push `(aref ,(car arg) 0) new-arglist))
+	    ((and (subtypep (car arg-type) 'array)
+		  (not (vble-is-array-p (car arg))))
+	     ;; Function wants an array, but we're passing in a
+	     ;; scalar.  Make an array out of that variable.
+	     (push `(make-array 1 :element-type (type-of ,(car arg))
+				:initial-element ,(car arg))
+		   new-arglist))
 	    (t
 	     (push (car arg) new-arglist))))
     (setf new-arglist (nreverse new-arglist))
@@ -2971,8 +2978,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.195 2008/03/02 03:26:07 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.196 2008/03/03 18:00:05 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.196  2008/03/03 18:00:05  rtoy
+;;; If a function wants an array but we are passing in a scalar (which is
+;;; valid Fortran), we make a 1-element array initialized to the value of
+;;; the scalar.
+;;;
 ;;; Revision 1.195  2008/03/02 03:26:07  rtoy
 ;;; o Ignore some variables
 ;;; o In MASSAGE-ARGLIST, if the argument of a function is a scalar, but

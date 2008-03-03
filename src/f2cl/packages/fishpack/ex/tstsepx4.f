@@ -44,7 +44,6 @@ c     w(1).
 c                                                                      
       dimension       usol(33,33),grhs(33,33),bda(33)    ,bdb(33)    , 
      1                w(1024)                                          
-      real dum(1)
       external cofx4                                                   
 c                                                                      
 c     define arithmetic functions giving exact solution                
@@ -156,9 +155,9 @@ c
      420x,48hfourth order discretization error =  1.85749e-06  /       
      520x,33hrequired length of w array = 1024 //                      
      620x, 32hthe output from your computer is //                      
-     720x, 8hierror = ,i2 /                                             
-     820x,36hsecond order discretization error = ,e12.5 /               
-     920x,36hfourth order discretization error = ,e12.5 /               
-     920x,29hrequired length of w array = ,i5)                          
+     720x, 8hierror = i2 /                                             
+     820x,36hsecond order discretization error = e12.5 /               
+     920x,36hfourth order discretization error = e12.5 /               
+     920x,29hrequired length of w array = i5)                          
 c                                                                      
       end                                                              

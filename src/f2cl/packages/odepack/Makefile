@@ -118,6 +118,9 @@ demo-lsoda.out : demo-lsoda
 demo-lsodar : demo4/opkdemo4.o demo4/f1.o demo4/f2.o demo4/gr1.o demo4/gr2.o demo4/jac2.o libodepack.a
 	$(F77) -o $@ $^
 
+demo-lsodar.out : demo-lsodar
+	demo-lsodar | tee $@
+
 demo-lsodpk : demo5/opkdemo5.o demo5/fweb.o demo5/gset.o demo5/cinit.o demo5/outweb.o demo5/jacbg.o demo5/setpar.o demo5/solsbg.o demo5/gs.o demo5/fbg.o demo5/webr.o libodepack.a
 	$(F77) -o $@ $^
 
@@ -129,11 +132,25 @@ demo-lsodpk.out : demo-lsodpk
 demo-lsodkr : opkdemo6.o libodepack.a
 	$(F77) -o $@ $^
 
+demo-lsodkr.out : demo-lsodkr
+	demo-lsodkr | tee $@
+
 demo-lsodi : demo7/opkdemo7.o demo7/res.o demo7/elkup.o demo7/jacbd.o demo7/jacfl.o demo7/addabd.o demo7/addafl.o demo7/gfun.o libodepack.a
 	$(F77) -o $@ $^
+
+demo-lsodi.out : demo-lsodi
+	demo-lsodi | tee $@
 
 demo-lsoibt : demo8/opkdemo8.o demo8/res.o demo8/edit.o demo8/maxerr.o demo8/jacbt.o demo8/setic.o demo8/addabt.o demo8/gfun.o demo8/subav.o libodepack.a
 	$(F77) -o $@ $^
 
+demo-lsoibt.out : demo-lsoibt
+	demo-lsoibt | tee $@
+
 demo-lsodis : opkdemo9.o libodepack.a
 	$(F77) -o $@ $^
+
+demo-lsodis.out : demo-lsodis
+	demo-lsodis | tee $@
+
+demo-output : demo-lsode.out demo-lsoda.out demo-lsodar.out demo-lsodpk.out demo-lsodkr.out demo-lsodi.out demo-lsoibt.out demo-lsodis.out

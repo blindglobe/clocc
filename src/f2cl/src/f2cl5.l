@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.184 2008/03/03 17:03:09 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.185 2008/03/03 19:27:20 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -107,6 +107,9 @@
 		;; the indices
 		(check_new_vbles (second exprs))
 		(mapc #'check_new_vbles (cdddr exprs)))
+	       ((eq (first exprs) 'make-array)
+		;;Nothing to do
+		)
 	       (t
 		(mapc #'check_new_vbles exprs))))
 	(t
@@ -2648,7 +2651,9 @@
       ;; m.mmmD%xx Make sure the character before "%" is D or E, and
       ;; then make sure that the stuff before the exponent and after
       ;; the "%" is a valid number.
-      (and (member (aref s (1- neg)) '(#\d #\D #\e #\E) :test #'char-equal)
+      (and neg
+	   (plusp neg)
+	   (member (aref s (1- neg)) '(#\d #\D #\e #\E) :test #'char-equal)
 	   (numberp (read-from-string (subseq s 0 (1- neg))))
 	   (numberp (read-from-string (subseq s (1+ neg))))))))
       
@@ -2875,11 +2880,10 @@
     ;;(format t "lun-part = ~A~%" lun-part)
     ;;(format t "fmt-part = ~A~%" fmt-part)
 
-    (let ((args (check_new_vbles
-		 (if (cdddr x)
-		     (mapcar #'parse-output-argument 
-			     (list-split '|,| (cdddr x)))
-		     nil))))
+    (let ((args (if (cdddr x)
+		    (mapcar #'parse-output-argument 
+			    (list-split '|,| (cdddr x)))
+		    nil)))
       ;; If there are no items to be written, make sure args is NIL,
       ;; so fformat knows there are no items.
       `((fformat ,(parse_format_dest lun-part)
@@ -2892,11 +2896,10 @@
 ;;               or: '(PRINT 9000 |,| X |,| Y)
 
 (defun parse-print (x)
-  (let ((args (check_new_vbles
-	       (if (cdddr x)
-		   (mapcar #'parse-output-argument 
-			   (list-split '|,| (cdddr x)))
-		   nil))))
+  (let ((args (if (cdddr x)
+		  (mapcar #'parse-output-argument 
+			  (list-split '|,| (cdddr x)))
+		  nil)))
     ;; If there are no items to be written, make sure args is NIL,
     ;; so fformat knows there are no items.
     `((fformat t
@@ -3110,7 +3113,7 @@
           (parse-implied-DO (list-split '|,| (car arg))))
          ((and (listp arg) (every #'listp arg)) ; dlist
           (parse-dlist arg))
-         (t (id-expression arg))))
+         (t (id-expression (check_new_vbles arg)))))
 
 #+nil
 (defun parse-implied-do (do-list)
@@ -3775,8 +3778,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.184 2008/03/03 17:03:09 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.185 2008/03/03 19:27:20 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.185  2008/03/03 19:27:20  rtoy
+;;; o Skip over make-array forms in CHECK_NEW_VBLES
+;;; o SYM-IS-NUMBER-P is more careful about matching the EXPR
+;;;   to an f2cl-hacked number.
+;;; o Check for new variables in PARSE-WRITE and PARSE-PRINT has
+;;;   been moved to PARSE-OUTPUT-ARGUMENT where it belongs.  We need
+;;;   to do it there so we can properly handle implied do loops and
+;;;   such
+;;;
 ;;; Revision 1.184  2008/03/03 17:03:09  rtoy
 ;;; Need to check for new variables in WRITE and PRINT statements.
 ;;;

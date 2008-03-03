@@ -28,7 +28,7 @@
 (eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
 
 (defparameter *f2cl6-version*
-  "$Id: f2cl6.l,v 1.45 2008/02/22 22:19:34 rtoy Exp $")
+  "$Id: f2cl6.l,v 1.46 2008/03/03 17:20:42 rtoy Rel $")
 
 ;--------------------------------------------------------------------------  
 ; global stream input for parse-number:
@@ -112,6 +112,11 @@
 			   (write-char (aref line posn) out)
 			   (incf posn))
 			 (write-char #\" out)
+			 ;; Output a comma to separate the Hollerith
+			 ;; from any following stuff.  I think it's ok
+			 ;; to have extra commas in the output, so we
+			 ;; con't need to check.
+			 (write-char #\, out)
 			 (setf k posn))
 		       ;; Not a hollerith.  Copy the digits out
 		       (loop while (< k posn) do
@@ -643,8 +648,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.45 2008/02/22 22:19:34 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.46 2008/03/03 17:20:42 rtoy Rel $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.46  2008/03/03 17:20:42  rtoy
+;;; Output a comma after a Hollerith string, to make sure we separate the
+;;; string from anything that follows.
+;;;
 ;;; Revision 1.45  2008/02/22 22:19:34  rtoy
 ;;; Use RCS Id as version.
 ;;;

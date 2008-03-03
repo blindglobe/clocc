@@ -236,10 +236,7 @@
 
 ;; (opkdemo5)
 ;;
-;; This seems to work, and the output matches the Fortran output, but
-;; the output appears to be truncated.  The output stops when printing
-;; the solution with mf = 24.  I don't know why.
-
+;; This seems to work, and the output matches the Fortran output
 (mk:defsystem odedemo-lsodpk
     :source-pathname (translate-logical-pathname "odepack:demo5")
     :binary-pathname (translate-logical-pathname "odepack:demo5")
@@ -272,8 +269,7 @@
     ((:file "opkdemo6")))
 
 
-;; This runs and the expected output seems ok, but there just isn't
-;; enough output compared to the Fortran version.
+;; This runs and the expected output seems ok.
 (mk:defsystem odedemo-lsodi
     :source-pathname (translate-logical-pathname "odepack:demo7")
     :binary-pathname (translate-logical-pathname "odepack:demo7")

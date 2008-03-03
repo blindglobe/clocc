@@ -1,6 +1,16 @@
 -*- Mode: text -*-
 
 Changes:
+Mar 2007
+------------
+o F2CL was missing variables first used in PRINT or WRITE statements
+  and hence didn't declare them.  We now check for new variables in
+  PRINT and WRITE statements.  Undoubtedly there are other places
+  where we are missing the check.
+o F2CL was incorrectly parsing Hollerith strings followed by an edit
+  descriptor without an intervening comma.  The edit descriptor was
+  incorrectly discarded.  This should be fixed now.
+
 Feb 2007
 ------------
 o I'm not good with keeping version numbers, so add an RCS Id string

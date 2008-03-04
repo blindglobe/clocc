@@ -236,7 +236,15 @@
 
 ;; (opkdemo5)
 ;;
-;; This seems to work, and the output matches the Fortran output
+;; This test takes quite a while to run.  Probably could be optimized
+;; more if we were more careful about array declarations.  Assumption
+;; untested, though.
+;;
+;; This seems to work, and the output matches the Fortran output,
+;; except the test with mf = 29 isn't printed out.  Don't know why.
+;;
+;; The output is placed in demout in the directory where this is run.
+;; Compare this to demo-lsodpk.out
 (mk:defsystem odedemo-lsodpk
     :source-pathname (translate-logical-pathname "odepack:demo5")
     :binary-pathname (translate-logical-pathname "odepack:demo5")

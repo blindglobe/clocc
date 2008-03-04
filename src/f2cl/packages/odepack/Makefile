@@ -128,6 +128,7 @@ demo-lsodpk.out : demo-lsodpk
 	$(RM) -f demout ccout
 	demo-lsodpk
 	mv demout $@
+	mv ccout ccout-lsodpk.out
 
 demo-lsodkr : opkdemo6.o libodepack.a
 	$(F77) -o $@ $^

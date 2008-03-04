@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.197 2008/03/03 19:28:29 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.198 2008/03/04 15:22:06 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1826,7 +1826,8 @@ FILENAME                 File containing Fortran code
 	     (push `(aref ,(car arg) 0) new-arglist))
 	    ((and (subtypep (car arg-type) 'array)
 		  (not (vble-is-array-p (car arg)))
-		  (not (eq (caar arg) 'array-slice)))
+		  (not (and (listp (car arg))
+			    (eq (caar arg) 'array-slice))))
 	     ;; Function wants an array, but we're passing in a
 	     ;; scalar.  Make an array out of that variable.
 	     ;;(format t "arg ~S: ~%" (car arg))
@@ -2980,8 +2981,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.197 2008/03/03 19:28:29 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.198 2008/03/04 15:22:06 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.198  2008/03/04 15:22:06  rtoy
+;;; Test for array-slice was incorrect.  Need to check if the arg is a
+;;; list too.
+;;;
 ;;; Revision 1.197  2008/03/03 19:28:29  rtoy
 ;;; Handle the case where of array-slice being passed as an arg.
 ;;;

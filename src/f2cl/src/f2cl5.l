@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.185 2008/03/03 19:27:20 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.186 2008/03/04 18:00:48 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -1648,8 +1648,14 @@
 				(declare (ignore ido))
 				`(data-implied-do ,loop ,(get-dims var) ,(get-types var)
 						  ,vals)))
-			     ((eq 'replace (first init))
-			      ;; These are initialized by f2cl-init-string (I hope).
+			     ((and (eq 'replace (first init))
+				   (not (search "/blockdata" (string (second defun-bit))
+						:test #'equalp)))
+			      ;; These are initialized by
+			      ;; f2cl-init-string (I hope).  But for
+			      ;; block data subprograms, we want to
+			      ;; initialize it, to be sure.  (See
+			      ;; donlp2, boxparam test, for example.)
 			      nil)
 			     (t
 			      init))))
@@ -3778,8 +3784,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.185 2008/03/03 19:27:20 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.186 2008/03/04 18:00:48 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.186  2008/03/04 18:00:48  rtoy
+;;; In block data subprograms, we were inadvertently deleting the
+;;; initializer for strings.  Not sure if this gets all of the cases.
+;;;
 ;;; Revision 1.185  2008/03/03 19:27:20  rtoy
 ;;; o Skip over make-array forms in CHECK_NEW_VBLES
 ;;; o SYM-IS-NUMBER-P is more careful about matching the EXPR

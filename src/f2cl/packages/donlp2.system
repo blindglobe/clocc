@@ -363,7 +363,8 @@
 	     (:file "undefexa"
 		    :compiler-options (:declare-common t))))))
 
-;; Works.  Output in UNDEFEXA.*.
+;; Must call (/blockdata/) before running (donlp2).  Takes a while to
+;; run (several minutes or more).  Works.  Output in WEAPONH2.*.
 (mk:defsystem ex-weaponas
   :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")

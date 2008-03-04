@@ -11,6 +11,21 @@ o F2CL was incorrectly parsing Hollerith strings followed by an edit
   descriptor without an intervening comma.  The edit descriptor was
   incorrectly discarded.  This should be fixed now.
 
+o Ran the following tests successfully:
+  - quadpack
+  - toms 419
+  - toms 715
+  - toms 717
+  - minpack
+    + lmdif, lmder
+  - hompack
+    + mainf, mainp, mainf
+  - odepack
+    + lsode, lsoda, lsodar, lsodpk, lsodkr, lsodi,lsoibt
+  - fishpack
+
+
+
 Feb 2007
 ------------
 o I'm not good with keeping version numbers, so add an RCS Id string

@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.199 2008/03/04 17:23:58 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.200 2008/03/04 22:04:44 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1127,16 +1127,24 @@ FILENAME                 File containing Fortran code
 
      ;; if-then
      (when (id-if-then x)
-       (return (parse-if-then (check_new_vbles x))))
+       ;; No need to check for new vars here, because I don't think
+       ;; there can be.
+       (return (parse-if-then x)))
+     
      ;; elseif (or else-if)
      (when (id-elseif x)
+       ;; No need to check for new vars here, because I don't think
+       ;; there can be.
        (return `((elseif_place_holder 
-		  ,(id-logical (cadr (check_new_vbles x)))))))
+		  ,(id-logical (cadr x))))))
      (when (id-else-if x)
        (return `((elseif_place_holder
-		  ,(id-logical (caddr (check_new_vbles x)))))))
+		  ,(id-logical (caddr x))))))
+     ;; else
      (when (id-else x)
        (return '((elseif_place_holder t))))
+
+     ;; endif
      (when (id-endif x)
        (return '(endif_place_holder)))
 
@@ -1145,7 +1153,12 @@ FILENAME                 File containing Fortran code
      (when (not (eq bindings 'fail))
        (return (parse-if-goto bindings)))
      (when (id-if x)
-       (return (parse-if (check_new_vbles x))))
+       ;; No need to check for new vars here.  There can be new vars
+       ;; defined here, but I think parse-if will handle that
+       ;; correctly.  This prevents spurious variables from being
+       ;; defined, like sqrt$, which comes about because we check
+       ;; before we've convert the function SQRT to FSQRT.
+       (return (parse-if x)))
 
      ;;assignments or statement functions
      (when (id-assignment x)
@@ -1330,15 +1343,22 @@ FILENAME                 File containing Fortran code
   (and (eq (car x) 'assign)
        (eq (third x) 'to)))
 
-;integer x,y,z,...
+;; Declaration of some type
+;; integer x,y,z,...
 (defun id-declaration (x) 
   (member (first x) '(integer integer1 integer2 integer4
 		      double real real8 character
 		      complex complex8 complex16
-		      logical dimension) :test #'eq))
+		      logical dimension)
+	  :test #'eq))
 ;------------------------------------------------------------------------------
-(defun id-if-then (x) (and (eq (car x) 'if) (member 'then x :test #'eq))) 
-(defun id-if-goto (x) (unify x '(if %pred goto %label) nil)) 
+(defun id-if-then (x)
+  (and (eq (car x) 'if)
+       (member 'then x :test #'eq)))
+
+(defun id-if-goto (x)
+  (unify x '(if %pred goto %label) nil))
+
 ;(defun id-if-assignment (x) (and (eq (car x) 'if) (member '= x :test #'eq))) 
 ;(defun id-if-pause (x) (and (eq (car x) 'if) (member 'pause x :test #'eq))) 
 
@@ -1351,7 +1371,9 @@ FILENAME                 File containing Fortran code
 	(t
 	 nil)))
 
-(defun id-else (x) (eq (car x) 'else)) 
+(defun id-else (x)
+  (eq (car x) 'else))
+
 ;; elseif can be written either as "ELSE IF" or "ELSEIF"
 (defun id-else-if (x)
   (and (eq (car x) 'else)
@@ -1361,21 +1383,36 @@ FILENAME                 File containing Fortran code
 (defun id-elseif (x)
   (eq (car x) 'elseif))
 
+;; ENDIF can be written as either "END IF" or "ENDIF"
 (defun id-endif (x) 
-       (or (eq (car x) 'endif) 
-           (and (eq (car x) 'end) (eq (cadr x) 'if)))) 
+  (or (eq (car x) 'endif) 
+      (and (eq (car x) 'end)
+	   (eq (cadr x) 'if))))
 
-(defun id-assignment (x) (member '= x :test #'eq))
-(defun id-subroutine-call (x) (eq (car x) 'call))
-(defun id-do-loop (x) (eq (car x) 'do))
+(defun id-assignment (x)
+  (member '= x :test #'eq))
 
-(defun id-pause (x) (eq (car x) 'pause))
+(defun id-subroutine-call (x)
+  (eq (car x) 'call))
 
-(defun id-return (x) (and (eq (car x) 'return) (null (cdr x))))
-(defun id-predicate (x) (id-logical x))
+(defun id-do-loop (x)
+  (eq (car x) 'do))
 
-(defun id-implicit-decl (x) (eq (car x) 'implicit))
-(defun id-parameter (x) (eq (car x) 'parameter))
+(defun id-pause (x)
+  (eq (car x) 'pause))
+
+(defun id-return (x)
+  (and (eq (car x) 'return)
+       (null (cdr x))))
+
+(defun id-predicate (x)
+  (id-logical x))
+
+(defun id-implicit-decl (x)
+  (eq (car x) 'implicit))
+
+(defun id-parameter (x)
+  (eq (car x) 'parameter))
 
 ;=============================================================================
 ; parsers
@@ -2996,8 +3033,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.199 2008/03/04 17:23:58 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.200 2008/03/04 22:04:44 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.200  2008/03/04 22:04:44  rtoy
+;;; o No need to check for new variables before parsing if statements.
+;;;   Don't think there can be new vars in if-then or else-if statements.
+;;; o Reindented some code neatly.
+;;;
 ;;; Revision 1.199  2008/03/04 17:23:58  rtoy
 ;;; MASSAGE-ARGLIST thought strings were not arrays and wrapped up strings
 ;;; in an array.

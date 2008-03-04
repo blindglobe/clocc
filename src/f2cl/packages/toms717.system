@@ -30,10 +30,12 @@
 					    "dl7ivm" "dl7itv" "ds7lvm" "dd7tpr"
 					    ))
 	       (:file "dg7lit"
-		      :depends-on ("dparck" "dv7scp" "dv2nrm" "dv2axy" "dl7sqr"
-					    "dv7cpy" "stopx" "dl7mst" "dl7sqr"
-					    "dg7qts" "drldst" "da7sst" "ditsum"
-					    "dl7tvm" "dl7vml" "ds7lup" "dl7svx"))
+		      :depends-on ("dmdc" "dl7svx" "dl7svn" "dl7srt"
+					    "df7hes" "ds7lup" "dl7vml" "dl7tvm"
+					    "dd7tpr" "ds7lvm" "da7sst" "drldst"
+					    "dg7qts" "dl7mst" "stopx" "dv7cpy"
+					    "ditsum" "dl7sqr" "dv2axy" "dv2nrm"
+					    "dv7scp" "dparck"))
 	       (:file "dglf"
 		      :depends-on ("divset" "drglg" "dv7cpy" "dv7scp"))
 	       (:file "dglg"
@@ -145,14 +147,14 @@
 	      :components
 	      (
 	       ;; This test appears to work and matches madsen.sgi,
-	       ;; more or less.
+	       ;; more or less.  Run (madsen).
 	       (:file "madsen"
 		      :depends-on ("madrj" "rhols"))
 	       (:file "madrj")
 	       (:file "rhols")
 
-	       ;; This test appears to work and matches madsen.sgi,
-	       ;; more or less.
+	       ;; This test appears to work and matches madsenb.sgi,
+	       ;; more or less.  Run (madsenb)
 	       (:file "madsenb"
 		      :depends-on ("madrj" "rhols"))
 

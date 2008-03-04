@@ -3,8 +3,12 @@
 ;;; This is a simple defsystem for converting some HOMPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: hompack.system,v 1.9 2008/02/27 18:44:03 rtoy Exp $
+;;; $Id: hompack.system,v 1.10 2008/03/04 15:29:22 rtoy Rel $
 ;;; $Log: hompack.system,v $
+;;; Revision 1.10  2008/03/04 15:29:22  rtoy
+;;; Add comment that we need to build blas-hompack manually before
+;;; building hompack.
+;;;
 ;;; Revision 1.9  2008/02/27 18:44:03  rtoy
 ;;; Add logical pathname
 ;;;
@@ -52,6 +56,11 @@
 						  :directory '(:relative "hompack" :wild-inferiors)
 						  :name :wild :type :wild)
 				   *load-pathname*))))
+
+;; Don't know why defsystem doesn't complain, but you need to load up
+;; blas.system and build blas-hompack first.  Otherwise, it loads up
+;; hompack-package before blas-hompack which causes an error since the
+;; BLAS package isn't defined.
 
 (mk:defsystem hompack-package
     :source-pathname (pathname "hompack:")
@@ -136,6 +145,9 @@
      (:file "upqrqf" :depends-on ("r1upqf"))
      ))
 
+;; Run (hompack::mainf).  Compare with hompack/ref-main.txt.
+;;
+;; Results are identical.
 (mk:defsystem hompack-test-mainf
     :source-pathname (pathname "hompack:")
     :source-extension "f"

@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.198 2008/03/04 15:22:06 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.199 2008/03/04 17:23:58 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1803,39 +1803,54 @@ FILENAME                 File containing Fortran code
   ;;(format t "info = ~A~%" info)
   (let ((arg-types (f2cl-finfo-arg-types info))
 	new-arglist)
-    (do ((arg-type arg-types (cdr arg-type))
-	 (arg arglist (cdr arg)))
-	((null arg-type))
-      ;;(format t "~A -> ~A~%" (car arg-type) (car arg))
-      (cond ((and (symbolp (car arg-type))
-		  (listp (car arg))
-		  (eq (caar arg) 'array-slice))
-	     ;; This means the expected arg type is a variable.  If
-	     ;; the actual arg is is an array slice, we can replace
-	     ;; the slice with the actual value.
-	     (destructuring-bind (slice var type indices limits)
-		 (car arg)
-	       (declare (ignore slice type))
-	       (push `(fref ,var ,indices ,limits)
-		     new-arglist)))
-	    ((and (not (subtypep (car arg-type) 'array))
-		  (vble-is-array-p (car arg)))
-	     ;; The arg type is not an array, but the actual argument
-	     ;; is.  We want the first element of the array as the
-	     ;; arg.
-	     (push `(aref ,(car arg) 0) new-arglist))
-	    ((and (subtypep (car arg-type) 'array)
-		  (not (vble-is-array-p (car arg)))
-		  (not (and (listp (car arg))
-			    (eq (caar arg) 'array-slice))))
-	     ;; Function wants an array, but we're passing in a
-	     ;; scalar.  Make an array out of that variable.
-	     ;;(format t "arg ~S: ~%" (car arg))
-	     (push `(make-array 1 :element-type (type-of ,(car arg))
-				:initial-element ,(car arg))
-		   new-arglist))
-	    (t
-	     (push (car arg) new-arglist))))
+    (flet ((fortran-string-p (sym)
+	     (cond ((stringp sym)
+		    t)
+		   (t
+		    ;; Look through explicit_vble_decls for sym and
+		    ;; see if it's a character array.
+		    (do ((type-clauses *explicit_vble_decls* (cdr type-clauses)))
+			((null type-clauses))
+		      (let ((decl (car type-clauses)))
+			(when (member sym decl :key #'car)
+			  (return-from fortran-string-p t))))))))
+      (do ((arg-type arg-types (cdr arg-type))
+	   (arg arglist (cdr arg)))
+	  ((null arg-type))
+	;;(format t "~A -> ~A~%" (car arg-type) (car arg))
+	(cond ((and (symbolp (car arg-type))
+		    (listp (car arg))
+		    (eq (caar arg) 'array-slice))
+	       ;; This means the expected arg type is a variable.  If
+	       ;; the actual arg is is an array slice, we can replace
+	       ;; the slice with the actual value.
+	       (destructuring-bind (slice var type indices limits)
+		   (car arg)
+		 (declare (ignore slice type))
+		 (push `(fref ,var ,indices ,limits)
+		       new-arglist)))
+	      ((and (not (subtypep (car arg-type) 'array))
+		    (vble-is-array-p (car arg)))
+	       ;; The arg type is not an array, but the actual argument
+	       ;; is.  We want the first element of the array as the
+	       ;; arg.
+	       (push `(aref ,(car arg) 0) new-arglist))
+	      ((and (subtypep (car arg-type) 'array)
+		    (not (vble-is-array-p (car arg)))
+		    (not (fortran-string-p (car arg)))
+		    (not (and (listp (car arg))
+			      (eq (caar arg) 'array-slice))))
+	       ;; Function wants an array, but we're passing in a
+	       ;; scalar.  Make an array out of that variable.
+	       #+(or)
+	       (progn
+		 (format t "arg ~S: ~%" (car arg))
+		 (format t "  explicit: ~S~%" *explicit_vble_decls*))
+	       (push `(make-array 1 :element-type (type-of ,(car arg))
+				  :initial-element ,(car arg))
+		     new-arglist))
+	      (t
+	       (push (car arg) new-arglist)))))
     (setf new-arglist (nreverse new-arglist))
     ;;(format t "new arglist = ~A~%" new-arglist)
     new-arglist))
@@ -2981,8 +2996,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.198 2008/03/04 15:22:06 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.199 2008/03/04 17:23:58 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.199  2008/03/04 17:23:58  rtoy
+;;; MASSAGE-ARGLIST thought strings were not arrays and wrapped up strings
+;;; in an array.
+;;;
 ;;; Revision 1.198  2008/03/04 15:22:06  rtoy
 ;;; Test for array-slice was incorrect.  Need to check if the arg is a
 ;;; list too.

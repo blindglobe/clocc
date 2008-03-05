@@ -193,8 +193,8 @@ c
       iord(1) = 0
       result = 0.0d+00
       abserr = 0.0d+00
-      if(c.eq.a.or.c.eq.b.or.(epsabs.le.0.0d+00.and
-     *  .epsrel.lt.dmax1(0.5d+02*epmach,0.5d-28))) go to 999
+      if(c.eq.a.or.c.eq.b.or.(epsabs.le.0.0d+00.and.
+     *   epsrel.lt.dmax1(0.5d+02*epmach,0.5d-28))) go to 999
 c
 c           first approximation to the integral
 c           -----------------------------------

@@ -71,8 +71,8 @@ C                    send d1mach from cor
 C  For machines with rounded arithmetic (e.g., IEEE or VAX arithmetic),
 C  use MACHEP = 0.5D0 * D1MACH(4) below.
 C
-C      DOUBLE PRECISION D1MACH
-C      EXTERNAL D1MACH
+      DOUBLE PRECISION D1MACH
+      EXTERNAL D1MACH
 C      DATA BIG/0.D+0/, ETA/0.D+0/, MACHEP/0.D+0/, ZERO/0.D+0/
 C      IF (BIG .GT. ZERO) GO TO 1
 C         BIG = D1MACH(2)

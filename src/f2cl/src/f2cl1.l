@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.200 2008/03/04 22:04:44 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.201 2008/03/05 01:26:40 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1843,14 +1843,19 @@ FILENAME                 File containing Fortran code
     (flet ((fortran-string-p (sym)
 	     (cond ((stringp sym)
 		    t)
-		   (t
+		   ((symbolp sym)
 		    ;; Look through explicit_vble_decls for sym and
 		    ;; see if it's a character array.
 		    (do ((type-clauses *explicit_vble_decls* (cdr type-clauses)))
 			((null type-clauses))
 		      (let ((decl (car type-clauses)))
 			(when (member sym decl :key #'car)
-			  (return-from fortran-string-p t))))))))
+			  (return-from fortran-string-p t)))))
+		   (t
+		    ;; I think all other cases can't be strings,
+		    ;; including array-slice, which should have been
+		    ;; handled elsewhere.
+		    nil))))
       (do ((arg-type arg-types (cdr arg-type))
 	   (arg arglist (cdr arg)))
 	  ((null arg-type))
@@ -1874,9 +1879,9 @@ FILENAME                 File containing Fortran code
 	       (push `(aref ,(car arg) 0) new-arglist))
 	      ((and (subtypep (car arg-type) 'array)
 		    (not (vble-is-array-p (car arg)))
-		    (not (fortran-string-p (car arg)))
 		    (not (and (listp (car arg))
-			      (eq (caar arg) 'array-slice))))
+			      (eq (caar arg) 'array-slice)))
+		    (not (fortran-string-p (car arg))))
 	       ;; Function wants an array, but we're passing in a
 	       ;; scalar.  Make an array out of that variable.
 	       #+(or)
@@ -3033,8 +3038,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.200 2008/03/04 22:04:44 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.201 2008/03/05 01:26:40 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.201  2008/03/05 01:26:40  rtoy
+;;; Be more careful in FORTRAN-STRING-P.  Was barfing when given an
+;;; array-slice in hompack.
+;;;
 ;;; Revision 1.200  2008/03/04 22:04:44  rtoy
 ;;; o No need to check for new variables before parsing if statements.
 ;;;   Don't think there can be new vars in if-then or else-if statements.

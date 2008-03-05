@@ -3,6 +3,7 @@ cauchy.lisp
 cdivid.lisp
 cmod.lisp
 cpoly.lisp
+cpolydr
 cpolydr.lisp
 errev.lisp
 fxshft.lisp

@@ -7,6 +7,17 @@
     :compiler #'donlp2-compiler
     :source-extension "f")
 
+;; CMUCL on a 1.5 GHz sparc takes about 30 minutes to compile this
+;; file.  Let's byte-cmompile it so it doesn't take so long.  Does
+;; slow runtime down, though.
+;;
+;; Enable the below to byte-compile that file.
+
+;;#+cmu
+;;(pushnew :byte-compile-o8opti *features*)
+
+(defparameter *donlp2-root*
+  (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*)))
 
 ;; To run any test, use (donlp2).  This means you have to
 ;; reload/recompile if you want to run a different test.
@@ -16,7 +27,7 @@
 
 ;; Works.  Output in ANTENNA1.*
 (mk:defsystem ex-antenna1
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -25,11 +36,13 @@
 	    :components
 	    (
 	     (:file "antenna1"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Works.  Output in HS101XXX.*
 (mk:defsystem ex-hs101
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -38,11 +51,13 @@
 	    :components
 	    (
 	     (:file "hs101"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Works.  Output in HS102XXX.*
 (mk:defsystem ex-hs102
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -51,11 +66,13 @@
 	    :components
 	    (
 	     (:file "hs102"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Works.  Output in HS103XXX.*
 (mk:defsystem ex-hs103
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -64,7 +81,9 @@
 	    :components
 	    (
 	     (:file "hs103"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Output in AMPLEXAM.*
 ;;
@@ -72,7 +91,7 @@
 ;; Fortran code.  Some numbers appear to be only agree to about 6
 ;; digits or so.
 (mk:defsystem ex-amplqp
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -81,12 +100,14 @@
 	    :components
 	    (
 	     (:file "amplqp"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Output in ALKYLATI.*.  Output is messed up a bit, but the final
 ;; results match the Fortran code results.
 (mk:defsystem ex-alkylati
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -95,7 +116,9 @@
 	    :components
 	    (
 	     (:file "alkylati"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Output in FRACXOPT.*
 ;;
@@ -103,7 +126,7 @@
 ;; The multipliers are quite a bit different. and the number of
 ;; evaluations are too.
 (mk:defsystem ex-fractf77new
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -112,11 +135,13 @@
 	    :components
 	    (
 	     (:file "fractf77new"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Works just fine.  Output in GIRDERDE.*.
 (mk:defsystem ex-girder
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -125,11 +150,13 @@
 	    :components
 	    (
 	     (:file "girder"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Works.  Output in NMCFQMHH.*
 (mk:defsystem ex-irreg1
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -138,11 +165,13 @@
 	    :components
 	    (
 	     (:file "irreg1"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Works.  Output in NMFCQ11X.*
 (mk:defsystem ex-irreg2
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -151,11 +180,13 @@
 	    :components
 	    (
 	     (:file "irreg2"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Works.  Output in NET1AMPL.*
 (mk:defsystem ex-net1
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -164,7 +195,9 @@
 	    :components
 	    (
 	     (:file "net1"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Output in HIMMELBL.*
 ;;
@@ -178,7 +211,7 @@
 ;; match except for a very small difference in one intermediate
 ;; result.
 (mk:defsystem ex-chemequi
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -187,12 +220,14 @@
 	    :components
 	    (
 	     (:file "chemequi"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Works.  Call (/blockdata/) before running (donlp2)
 ;; Output in BOXPARID.*.
 (mk:defsystem ex-boxparam
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -201,7 +236,9 @@
 	    :components
 	    (
 	     (:file "boxparam"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Output in BETTING8.*
 ;;
@@ -209,7 +246,7 @@
 ;; running (donlp2) so that the block data subprogram actually
 ;; initializes the necessary items.
 (mk:defsystem ex-betting
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -218,7 +255,9 @@
 	    :components
 	    (
 	     (:file "betting"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 
 ;; Must call (/blockdata/) before running (donlp2).  Output in
@@ -226,7 +265,7 @@
 ;;
 ;; .Works.
 (mk:defsystem ex-barnes
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -235,14 +274,16 @@
 	    :components
 	    (
 	     (:file "barnes"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Must call (/blockdata/) before running (donlp2).  Output in
 ;; DEMBO1AS.*
 ;;
 ;; .Works.
 (mk:defsystem ex-dembo1as
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -251,14 +292,16 @@
 	    :components
 	    (
 	     (:file "dembo1as"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Must call (/blockdata/) before running (donlp2).  Output in
 ;; DEMBO4CX.*
 ;;
 ;; .Works.
 (mk:defsystem ex-dembo4
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -267,14 +310,16 @@
 	    :components
 	    (
 	     (:file "dembo4"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Must call (/blockdata/) before running (donlp2).  Output in
 ;; DEMBO7XX.*
 ;;
 ;; .Works.
 (mk:defsystem ex-dembo7
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -283,7 +328,9 @@
 	    :components
 	    (
 	     (:file "dembo7"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Doesn't work because f2cl doesn't know how to handle
 ;;
@@ -291,7 +338,7 @@
 ;;
 ;; where NX is a PARAMETER..
 (mk:defsystem ex-hs109
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -300,14 +347,16 @@
 	    :components
 	    (
 	     (:file "hs109"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Must call (/blockdata/) before running (donlp2).  Output in
 ;; MARATOS0.*
 ;;
 ;; .Works.
 (mk:defsystem ex-maratos
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -316,14 +365,16 @@
 	    :components
 	    (
 	     (:file "maratos"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Must call (/blockdata/) before running (donlp2).  Output in
 ;; PAVIANI2.*
 ;;
 ;; .Works.
 (mk:defsystem ex-paviani2
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -332,14 +383,16 @@
 	    :components
 	    (
 	     (:file "paviani2"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; F2cl doesn't understand
 ;;
 ;;       DATA (A(I),A(I+7),I=1,7)/
 ;;
 (mk:defsystem ex-tp383mod
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -348,11 +401,13 @@
 	    :components
 	    (
 	     (:file "tp383mod"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Works.  Output in UNDEFEXA.*.
 (mk:defsystem ex-undefexa
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -361,12 +416,14 @@
 	    :components
 	    (
 	     (:file "undefexa"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 ;; Must call (/blockdata/) before running (donlp2).  Takes a while to
 ;; run (several minutes or more).  Works.  Output in WEAPONH2.*.
 (mk:defsystem ex-weaponas
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :depends-on ("donlp2")
   :components
   ((:module donlp2
@@ -375,18 +432,22 @@
 	    :components
 	    (
 	     (:file "weaponas"
-		    :compiler-options (:declare-common t))))))
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
 
 (mk:defsystem donlp2
-  :source-pathname (make-pathname :host (pathname-host *load-pathname*) :directory (pathname-directory *load-pathname*))
+  :source-pathname *donlp2-root*
   :components
   ((:module donlp2
 	    :source-extension "f"
 	    :language :f2cl
+	    :compiler-options (:array-slicing nil :array-type :simple-array)
 	    :components
 	    (
 	     (:file "support.lisp"
-		    :language :lisp)
+		    :language :lisp
+		    :compiler-options nil)
 	     ;; Default dummy routines.  These are default versions
 	     ;; that the user can modify.
 	     (:file "eval_extern")
@@ -395,7 +456,9 @@
 	     ;;(:file "dummy-usr")
 	     ;; The core donlp2 routines.
 	     (:file "donlp2"
-		    :compiler-options (:declare-common t)
+		    :compiler-options (:declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array)
 		    :depends-on ("esgradf"
 				 "esgradh"
 				 "esgradg"
@@ -419,7 +482,11 @@
 	     (:file "o8shms")
 	     (:file "o8msg")
 	     (:file "o8opti"
-		    ;;:compiler-options (:byte-compile t)
+		    #+byte-compile-o8opti
+		    :compiler-options
+		    #+byte-compile-o8opti
+		    (:byte-compile t :array-slicing nil
+				   :array-type :simple-array)
 		    :depends-on ("esh"
 				 "esgradh"
 				 "esg"
@@ -474,7 +541,7 @@
 	     (:file "o8left")
 	     (:file "o8vecn")
 	     (:file "o8qpdu"
-		    :compiler-options (:declare-common t)
+		    :compiler-options (:declare-common t :array-slicing nil :array-type :simple-array)
 		    :depends-on ("o8rinv"
 				 "o8zup"
 				 "o8rup"
@@ -485,13 +552,10 @@
 	     (:file "o8adcd")
 	     (:file "o8rinv")
 	     (:file "esf")
-	     (:file "esgradf"
-		    :depends-on ())
+	     (:file "esgradf")
 	     (:file "esh")
-	     (:file "esgradh"
-		    :depends-on ())
+	     (:file "esgradh")
 	     (:file "esg")
-	     (:file "esgradg")
-))))
+	     (:file "esgradg")))))
 
 

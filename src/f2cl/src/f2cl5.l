@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.187 2008/03/06 17:39:25 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.188 2008/03/06 18:19:24 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -1585,6 +1585,7 @@
 	      :test #'(lambda (a b)
 			(eq (third (second a))
 			    (third (second b))))))))
+     ;;(format t "saved-decls = ~S~%" saved-decls)
 
      ;; Initialize SAVE'd variables appropriately.  But don't need to
      ;; initialize SAVE'd variables that are in common blocks.
@@ -1792,7 +1793,27 @@
 			 save-inits)))
 	 ;;(format t "non-common-save-inits  = ~S~%" non-common-save-inits)
 	 (multiple-value-setq (save-inits *data-init*)
-	   (merge-data-and-save-inits non-common-save-inits *data-init*))))
+	   (merge-data-and-save-inits non-common-save-inits *data-init*)))
+       ;; Clean up saved-decls
+       (let ((all-inits (append save-inits *data-init*))
+	     (new-decls))
+	 #+(or)
+	 (progn
+	   (format t "all-inits = ~S~%" all-inits)
+	   (format t "saved-decls = ~S~%" (car saved-decls))
+	   (format t "cddr saved-decls = ~S~%" (cdar saved-decls)))
+	 (dolist (d (cdar saved-decls))
+	   (let ((vars (remove-if-not #'(lambda (v)
+					  (member (car v) (cddr d)))
+				      all-inits)))
+	     (when vars
+	       (push `(,(car d) ,(second d)
+			,@(mapcar #'car vars))
+		     new-decls))))
+	 (when new-decls
+	   (setf saved-decls `((declare ,@new-decls))))
+	 ;;(format t "new-saved-decls = ~S~%" saved-decls)
+	 ))
      
      ;;(format t "new *data-init* = ~S~%" *data-init*)
      ;;(format t "new save-inits  = ~S~%" save-inits)
@@ -3785,8 +3806,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.187 2008/03/06 17:39:25 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.188 2008/03/06 18:19:24 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.188  2008/03/06 18:19:24  rtoy
+;;; When merging data and save inits, we clean up the declarations too
+;;; because the merging may end up removing lots of variables.  (See
+;;; donlp2/o8msg for an example.)
+;;;
 ;;; Revision 1.187  2008/03/06 17:39:25  rtoy
 ;;; Declare Fortran PARAMETER variables as ignorable since we can't always
 ;;; tell if they're used or not.  Gets rid of some compiler warnings.

@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.97 2008/02/26 04:14:31 rtoy Exp $")
+  "$Id: macros.l,v 1.98 2008/03/06 20:04:10 rtoy Exp $")
 
 ;; macros:
 ;;	rexpt
@@ -1228,7 +1228,7 @@ causing all pending operations to be flushed"
     ((eq format :list-directed)
      ;; This prints out the args separated by spaces and puts a line
      ;; break after about 80 columns.
-     (format stream "~& ~{~<~% ~1,81:;~A~>~^ ~}~%"
+     (format stream "~& ~{~<~% ~1,81:;~G~>~^ ~}~%"
 	     (flatten-list
 	      (mapcar #'(lambda (v)
 			  ;; Some special cases.  Complex numbers
@@ -1527,8 +1527,15 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.97 2008/02/26 04:14:31 rtoy Exp $
+;;; $Id: macros.l,v 1.98 2008/03/06 20:04:10 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.98  2008/03/06 20:04:10  rtoy
+;;; Use ~G for list-directed I/O so that numbers come out reasonably.
+;;; (F77 standard says E or F is used, depending on the magnitude of the
+;;; number.  The parameters for E and F are processer dependent as is the
+;;; magnitude used to select between E or F.  This is pretty close to how
+;;; ~G works in Lisp.)
+;;;
 ;;; Revision 1.97  2008/02/26 04:14:31  rtoy
 ;;; Explicitly check for T and NIL.
 ;;;

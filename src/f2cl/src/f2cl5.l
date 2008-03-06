@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.188 2008/03/06 18:19:24 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.189 2008/03/06 22:02:26 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2997,6 +2997,7 @@
   (let* ((read-opts (list-split '|,| (second x)))
 	 (lun (caar read-opts)))
     ;;(format t "read-opts = ~S~%" read-opts)
+    ;;(format t "vars = ~S~%" (cddr x))
     (labels ((handle-simple-var (expr)
 	       (cond ((and (listp expr)
 			   (eq (first expr) 'fref))
@@ -3006,6 +3007,7 @@
 		      `(f2cl-set-string ,expr (read (f2cl-lib::lun->stream ,lun))
 					,(lookup-vble-type expr)))
 		     (t
+		      (check_new_vbles expr)
 		      `(setf ,expr (read (f2cl-lib::lun->stream ,lun))))))
 	     (handle-implied-do (do-list)
 	       ;; Like parse-implied-do
@@ -3806,8 +3808,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.188 2008/03/06 18:19:24 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.189 2008/03/06 22:02:26 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.189  2008/03/06 22:02:26  rtoy
+;;; Check for new variables in READ statements.
+;;;
 ;;; Revision 1.188  2008/03/06 18:19:24  rtoy
 ;;; When merging data and save inits, we clean up the declarations too
 ;;; because the merging may end up removing lots of variables.  (See

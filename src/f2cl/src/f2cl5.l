@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.186 2008/03/04 18:00:48 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.187 2008/03/06 17:39:25 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -1285,7 +1285,8 @@
 		 keys)))
 
     (setf code-key-params-decls
-	  `((declare ,@(mapcan #'cdr code-key-params-decls))))
+	  `((declare ,@(mapcan #'cdr code-key-params-decls)
+		     (ignorable ,@(mapcar #'car keys)))))
     code-key-params-decls))
 
 (defun insert-declarations (fort-fun) 
@@ -3784,8 +3785,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.186 2008/03/04 18:00:48 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.187 2008/03/06 17:39:25 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.187  2008/03/06 17:39:25  rtoy
+;;; Declare Fortran PARAMETER variables as ignorable since we can't always
+;;; tell if they're used or not.  Gets rid of some compiler warnings.
+;;;
 ;;; Revision 1.186  2008/03/04 18:00:48  rtoy
 ;;; In block data subprograms, we were inadvertently deleting the
 ;;; initializer for strings.  Not sure if this gets all of the cases.

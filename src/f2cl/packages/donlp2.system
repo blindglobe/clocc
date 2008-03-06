@@ -1,11 +1,17 @@
 ;;; -*- Mode: Lisp -*-
 
+(eval-when (compile load eval)
+  (defpackage #:donlp2
+    (:use "COMMON-LISP")))
+
 (defun donlp2-compiler (filename &rest args)
   (apply #'f2cl:f2cl-compile filename args))
 
 (mk:define-language :f2cl
     :compiler #'donlp2-compiler
     :source-extension "f")
+
+
 
 ;; CMUCL on a 1.5 GHz sparc takes about 30 minutes to compile this
 ;; file.  Let's byte-cmompile it so it doesn't take so long.  Does
@@ -36,7 +42,7 @@
 	    :components
 	    (
 	     (:file "antenna1"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -51,7 +57,7 @@
 	    :components
 	    (
 	     (:file "hs101"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -66,7 +72,7 @@
 	    :components
 	    (
 	     (:file "hs102"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -81,7 +87,7 @@
 	    :components
 	    (
 	     (:file "hs103"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -100,7 +106,7 @@
 	    :components
 	    (
 	     (:file "amplqp"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -116,7 +122,7 @@
 	    :components
 	    (
 	     (:file "alkylati"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -135,7 +141,7 @@
 	    :components
 	    (
 	     (:file "fractf77new"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -150,7 +156,7 @@
 	    :components
 	    (
 	     (:file "girder"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -165,7 +171,7 @@
 	    :components
 	    (
 	     (:file "irreg1"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -180,7 +186,7 @@
 	    :components
 	    (
 	     (:file "irreg2"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -195,7 +201,7 @@
 	    :components
 	    (
 	     (:file "net1"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -220,7 +226,7 @@
 	    :components
 	    (
 	     (:file "chemequi"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -236,7 +242,7 @@
 	    :components
 	    (
 	     (:file "boxparam"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -255,7 +261,7 @@
 	    :components
 	    (
 	     (:file "betting"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -274,7 +280,7 @@
 	    :components
 	    (
 	     (:file "barnes"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -292,7 +298,7 @@
 	    :components
 	    (
 	     (:file "dembo1as"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -310,7 +316,7 @@
 	    :components
 	    (
 	     (:file "dembo4"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -328,7 +334,7 @@
 	    :components
 	    (
 	     (:file "dembo7"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -347,7 +353,7 @@
 	    :components
 	    (
 	     (:file "hs109"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -365,7 +371,7 @@
 	    :components
 	    (
 	     (:file "maratos"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -383,7 +389,7 @@
 	    :components
 	    (
 	     (:file "paviani2"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -401,7 +407,7 @@
 	    :components
 	    (
 	     (:file "tp383mod"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -416,7 +422,7 @@
 	    :components
 	    (
 	     (:file "undefexa"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -432,7 +438,7 @@
 	    :components
 	    (
 	     (:file "weaponas"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
@@ -442,7 +448,7 @@
   ((:module donlp2
 	    :source-extension "f"
 	    :language :f2cl
-	    :compiler-options (:array-slicing nil :array-type :simple-array)
+	    :compiler-options (:package :donlp2 :array-slicing nil :array-type :simple-array)
 	    :components
 	    (
 	     (:file "support.lisp"
@@ -456,7 +462,7 @@
 	     ;;(:file "dummy-usr")
 	     ;; The core donlp2 routines.
 	     (:file "donlp2"
-		    :compiler-options (:declare-common t
+		    :compiler-options (:package :donlp2 :declare-common t
 						       :array-slicing nil
 						       :array-type :simple-array)
 		    :depends-on ("esgradf"
@@ -541,7 +547,148 @@
 	     (:file "o8left")
 	     (:file "o8vecn")
 	     (:file "o8qpdu"
-		    :compiler-options (:declare-common t :array-slicing nil :array-type :simple-array)
+		    :compiler-options (:package :donlp2 :declare-common t
+				       :array-slicing nil :array-type :simple-array)
+		    :depends-on ("o8rinv"
+				 "o8zup"
+				 "o8rup"
+				 "o8dlcd"))
+	     (:file "o8zup")
+	     (:file "o8rup")
+	     (:file "o8dlcd")
+	     (:file "o8adcd")
+	     (:file "o8rinv")
+	     (:file "esf")
+	     (:file "esgradf")
+	     (:file "esh")
+	     (:file "esgradh")
+	     (:file "esg")
+	     (:file "esgradg")))))
+
+
+
+;;; The following system converts the Fortran code to Lisp and places
+;;; all of the code in the donlp2 package, with a float-format of
+;;; 'double-float.  Thus, this code could be used with maxima.
+
+(mk:define-language :f2cl-lisp
+    :compiler #'f2cl:f2cl
+    :source-extension "f"
+    :binary-extension "lisp")
+
+
+(mk:defsystem donlp2-maxima
+  :source-pathname *donlp2-root*
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :binary-pathname (make-pathname :directory '(:relative "donlp2" "lisp")
+					    :defaults *donlp2-root*)
+	    :binary-extension "lisp"
+	    :language :f2cl-lisp
+	    :compile-only t
+	    :compiler-options (:package :donlp2
+			       :array-slicing nil
+			       :array-type :simple-array
+			       :float-format double-float)
+	    :components
+	    (
+	     (:file "support.lisp"
+		    :language :lisp
+		    :compiler-options nil)
+	     ;; Default dummy routines.  These are default versions
+	     ;; that the user can modify.
+	     (:file "eval_extern")
+	     (:file "user_eval")
+	     (:file "solchk")
+	     ;;(:file "dummy-usr")
+	     ;; The core donlp2 routines.
+	     (:file "donlp2"
+		    :compiler-options (:package :donlp2 :declare-common t
+				       :array-slicing nil
+				       :array-type :simple-array
+				       :float-format double-float)
+		    :depends-on ("esgradf"
+				 "esgradh"
+				 "esgradg"
+				 "o8vecn"
+				 ))
+	     (:file "o8st"
+		    :depends-on ("esg"
+				 "esh"
+				 "o8msg"))
+	     (:file "o8fin")
+	     (:file "o8info"
+		    :depends-on ("o8mdru"))
+	     (:file "o8sce")
+	     (:file "o8bfgs"
+		    :depends-on ("o8sc2"
+				 "o8vecn"
+				 "o8msg"
+				 "o8sc3"
+				 "o8sc1"
+				 "o8upd"))
+	     (:file "o8shms")
+	     (:file "o8msg")
+	     (:file "o8opti"
+		    :depends-on ("esh"
+				 "esgradh"
+				 "esg"
+				 "esgradg"
+				 "o8vecn"
+				 "esf"
+				 "esgradf"
+				 "o8left"
+				 "o8ht"
+				 "o8sol"
+				 "o8dec"
+				 "o8ht"
+				 "o8solt"
+				 "o8rght"
+				 "esh"
+				 "esg"
+				 "o8unim"
+				 "o8egph"))
+	     (:file "o8inim")
+	     (:file "o8dird"
+		    :depends-on ("o8sc1"
+				 "o8sc3"))
+	     (:file "o8cutd"
+		    :depends-on ("o8vecn"
+				 "o8sc1"))
+	     (:file "o8smax")
+	     (:file "o8rest")
+	     (:file "o8save")
+	     (:file "o8eval"
+		    :depends-on ("esh"
+				 "esg"
+				 "esf"))
+	     (:file "o8unim"
+		    :depends-on ("o8eval" "o8rest" "o8save"))
+	     (:file "o8sc1")
+	     (:file "o8sc2")
+	     (:file "o8sc3")
+	     (:file "o8mdru")
+	     (:file "o8egph")
+	     (:file "o8dec"
+		    :depends-on ("o8left"
+				 "o8ht"
+				 "o8vecn"))
+	     (:file "o8ht")
+	     (:file "o8sol")
+	     (:file "o8solt")
+	     (:file "o8dsq1")
+	     (:file "o8upd"
+		    :depends-on ("o8left"
+				 "o8dsq1"))
+	     (:file "o8rght")
+	     (:file "o8left")
+	     (:file "o8vecn")
+	     (:file "o8qpdu"
+		    :compiler-options (:package :donlp2 :declare-common t
+				       :array-slicing nil
+				       :array-type :simple-array
+				       :float-format double-float)
 		    :depends-on ("o8rinv"
 				 "o8zup"
 				 "o8rup"

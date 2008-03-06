@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.98 2008/03/06 20:04:10 rtoy Exp $")
+  "$Id: macros.l,v 1.99 2008/03/06 21:20:41 rtoy Exp $")
 
 ;; macros:
 ;;	rexpt
@@ -1097,7 +1097,7 @@ causing all pending operations to be flushed"
   (let ((s (and status (string-right-trim " " status))))
     (finish-output)
     (cond ((or (null s) (string-equal s "unknown"))
-	   (open file :direction :io :if-exists :append
+	   (open file :direction :io :if-exists :supersede
 		 :if-does-not-exist :create))
 	  ((string-equal s "old")
 	   (open file :direction :io :if-does-not-exist nil))
@@ -1527,8 +1527,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.98 2008/03/06 20:04:10 rtoy Exp $
+;;; $Id: macros.l,v 1.99 2008/03/06 21:20:41 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.99  2008/03/06 21:20:41  rtoy
+;;; Change the open mode from append to supersede.  I think this makes
+;;; more sense and seems to match g77 better.
+;;;
 ;;; Revision 1.98  2008/03/06 20:04:10  rtoy
 ;;; Use ~G for list-directed I/O so that numbers come out reasonably.
 ;;; (F77 standard says E or F is used, depending on the magnitude of the

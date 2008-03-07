@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.99 2008/03/06 21:20:41 rtoy Exp $")
+  "$Id: macros.l,v 1.100 2008/03/07 23:15:01 rtoy Exp $")
 
 ;; macros:
 ;;	rexpt
@@ -1228,23 +1228,26 @@ causing all pending operations to be flushed"
     ((eq format :list-directed)
      ;; This prints out the args separated by spaces and puts a line
      ;; break after about 80 columns.
-     (format stream "~& ~{~<~% ~1,81:;~G~>~^ ~}~%"
-	     (flatten-list
-	      (mapcar #'(lambda (v)
-			  ;; Some special cases.  Complex numbers
-			  ;; should be printed out like (r, i).
-			  ;; Arrays should be printed out as if it
-			  ;; were a long list of numbers.
-			  (typecase v
-			    (complex
-			     (list #\( (realpart v) #\, (imagpart v) #\)))
-			    (string
-			     v)
-			    (array
-			     (coerce v 'list))
-			    (t
-			     v)))
-		      (flatten-list args)))))
+     (format stream "~& ~{~<~% ~1,81:;~?~>~^ ~}~%"
+	     (mapcan #'(lambda (v)
+			 ;; Some special cases.  Complex numbers
+			 ;; should be printed out like (r, i).
+			 ;; Arrays should be printed out as if it
+			 ;; were a long list of numbers.
+			 (typecase v
+			   (complex
+			    (list "(~g, ~g)" (list (realpart v) (imagpart v) #\))))
+			   (string
+			    (list "~A" (list v)))
+			   (array
+			    (list "~A" (list (coerce v 'list))))
+			   (float
+			    (list "~G" (list v)))
+			   (integer
+			    (list "~D" (list v)))
+			   (t
+			    (list "~A" (list v)))))
+		     (flatten-list args))))
     (t
      (let ((format-list (copy-tree format))
 	   (arg-list
@@ -1527,8 +1530,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.99 2008/03/06 21:20:41 rtoy Exp $
+;;; $Id: macros.l,v 1.100 2008/03/07 23:15:01 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.100  2008/03/07 23:15:01  rtoy
+;;; Use ~? so we can control the format string to print out various
+;;; objects for list-directed output.
+;;;
 ;;; Revision 1.99  2008/03/06 21:20:41  rtoy
 ;;; Change the open mode from append to supersede.  I think this makes
 ;;; more sense and seems to match g77 better.

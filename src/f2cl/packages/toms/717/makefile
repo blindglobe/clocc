@@ -27,25 +27,29 @@ smdc.f: smdc.f0
 	true  # Obtain dmcd.f from smdc.f0 by activating the statements
 	false # appropriate to your machine
 
-madsen.out: madsen.f dglfg.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o
-	$(F77) madsen.f dglfg.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o $L
-	a.out >$@
+madsen: madsen.f dglfg.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o
+	$(F77) -o $@ madsen.f dglfg.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o $L
 
-madsenb.out: madsenb.f dglfgb.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o
-	$(F77) madsenb.f dglfgb.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o $L
-	a.out >$@
+madsen.out : madsen
+	madsen >$@
 
-pmain: dpmain.o mecdf.o dglfg.o dglfgb.o dgletc.o dmdc.o d1mach.o
-	$(F77) dpmain.o mecdf.o dglfg.o dglfgb.o dgletc.o dmdc.o $L -o $@
+madsenb: madsenb.f dglfgb.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o
+	$(F77) -o $@ madsenb.f dglfgb.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o $L
+
+madsenb.out : madsen
+	madsenb >$@
+
+pmain: dpmain.o mecdf.o dglfg.o dglfgb.o dgletc.o dmdc.o d1mach.o phi.o alnorm.o
+	$(F77) -o $@ dpmain.o mecdf.o dglfg.o dglfgb.o dgletc.o dmdc.o d1mach.o phi.o alnorm.o $L 
 
 pmain.out: pmain pmain.in
 	pmain <pmain.in >$@
 
-mlmnp: mlmnp.o mecdf.o mnpsubs.o dglfg.o dgletc.o dmdc.o d1mach.o
-	$(F77) mlmnp.o mecdf.o mnpsubs.o dglfg.o dgletc.o dmdc.o $L -o $@
+mlmnp: mlmnp.o mecdf.o mnpsubs.o dglfg.o dgletc.o dmdc.o d1mach.o phi.o alnorm.o
+	$(F77) -o $@ mlmnp.o mecdf.o mnpsubs.o dglfg.o dgletc.o dmdc.o d1mach.o phi.o alnorm.o $L 
 
-mlmnpb: mlmnpb.o mecdf.o mnpsubs.o dglfgb.o dgletc.o dmdc.o d1mach.o
-	$(F77) mlmnpb.o mecdf.o mnpsubs.o dglfgb.o dgletc.o dmdc.o $L -o $@
+mlmnpb: mlmnpb.o mecdf.o mnpsubs.o dglfgb.o dgletc.o dmdc.o d1mach.o phi.o alnorm.o
+	$(F77) -o $@ mlmnpb.o mecdf.o mnpsubs.o dglfgb.o dgletc.o dmdc.o d1mach.o phi.o alnorm.o $L
 
 mnpex1.out mnpex1b.out: mlmnp mlmnpb mnpex1.fu1 daganzo.fu2
 	rm -f fort.?

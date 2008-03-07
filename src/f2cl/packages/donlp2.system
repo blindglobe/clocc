@@ -573,6 +573,7 @@
 
 (mk:define-language :f2cl-lisp
     :compiler #'f2cl:f2cl
+    :loader #'identity
     :source-extension "f"
     :binary-extension "lisp")
 

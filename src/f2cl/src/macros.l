@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.100 2008/03/07 23:15:01 rtoy Exp $")
+  "$Id: macros.l,v 1.101 2008/03/08 12:49:08 rtoy Exp $")
 
 ;; macros:
 ;;	rexpt
@@ -1223,31 +1223,78 @@ causing all pending operations to be flushed"
 				      (flatten-helper (cdr x) r))))))
     (flatten-helper x nil)))
 
+;; Fortran G format, roughly.  We use ~F for numbers "near" 1, and use
+;; ~E otherwise.
+;;
+;; Note that g77 seems to use an exponent marker of E for single and
+;; double floats, but Sun Fortran uses E and D.  I think I like E and
+;; D to distinguish between them.  Also note that g77 uses just enough
+;; digits for the numbers, but Sun Fortran seems to specify the number
+;; of printed digits to be 16 or so.  Thus 1.0 is "1.0" with g77, but
+;; "1.0000000000000" with Sun Fortran.  I like g77's style better.
+(defun fortran-format-g (stream arg colon-p at-p &rest args)
+  (declare (ignore colon-p at-p args))
+  (let* ((marker (typecase arg
+		   (single-float "E")
+		   (double-float "D")))
+	 ;; g77 uses limits 1d-4 and 1d9.  Sun Fortran uses 1 and
+	 ;; 1d15.
+	 (format-string (if (and (>= arg 1d-4)
+				 (< arg 1d9))
+			    "~F"
+			    (concatenate 'string "~,,2,,,,'"
+					 marker
+					 "E"))))
+    (format stream format-string arg)))
+
+;; Output objects in Fortran style, roughly.  This basically means
+;; complex numbers are printed as "(<re>, <im>)", floats use
+;; FORTRAN-FORMAT-G, integers use ~D, strings are printed as is, and
+;; T/NIL become "T" or "F".
+(defun fortran-format (stream arg colon-p at-p &rest args)
+  (declare (ignore colon-p at-p args))
+  (etypecase arg
+    (complex
+     (format stream "(~/f2cl-lib::fortran-format-g/, ~/f2cl-lib::fortran-format-g/)"
+	     (realpart arg) (imagpart arg)))
+    (float
+     (format stream "  ~/f2cl-lib::fortran-format-g/" arg))
+    (integer
+     (format stream "  ~D" arg))
+    (string
+     (format stream "~A" arg))
+    ((member t nil)
+     (format stream (if arg "T " "F ")))))
+     
 (defun execute-format-main (stream format &rest args)
   (cond
     ((eq format :list-directed)
      ;; This prints out the args separated by spaces and puts a line
      ;; break after about 80 columns.
-     (format stream "~& ~{~<~% ~1,81:;~?~>~^ ~}~%"
-	     (mapcan #'(lambda (v)
-			 ;; Some special cases.  Complex numbers
-			 ;; should be printed out like (r, i).
-			 ;; Arrays should be printed out as if it
-			 ;; were a long list of numbers.
-			 (typecase v
-			   (complex
-			    (list "(~g, ~g)" (list (realpart v) (imagpart v) #\))))
-			   (string
-			    (list "~A" (list v)))
-			   (array
-			    (list "~A" (list (coerce v 'list))))
-			   (float
-			    (list "~G" (list v)))
-			   (integer
-			    (list "~D" (list v)))
-			   (t
-			    (list "~A" (list v)))))
-		     (flatten-list args))))
+     (format stream "~& ~{~<~%~1,81:;~?~>~^~}~%"
+	     (let (pars)
+	       (dolist (v args)
+		 ;; Some special cases.  Let FORTRAN-FORMAT handle
+		 ;; most cases, except strings, which we just print
+		 ;; out ourselves.  Lists (from implied-do loops) and
+		 ;; arrays use FORTRAN-FORMAT for each element.
+		 (typecase v
+		   (string
+		    (push "~A"  pars)
+		    (push (list v) pars))
+		   (cons
+		    (dolist (item v)
+		      (push "~/f2cl-lib::fortran-format/" pars)
+		      (push (list item) pars)))
+		   (array
+		    (dotimes (k (length v))
+		      (push "~/f2cl-lib::fortran-format/" pars)
+		      (push (list (aref v k)) pars)))
+		   (t
+		    (push "~/f2cl-lib::fortran-format/" pars)
+		    (push (list v) pars))))
+	       ;;(format t "~S~%" (reverse pars))
+	       (nreverse pars))))
     (t
      (let ((format-list (copy-tree format))
 	   (arg-list
@@ -1530,8 +1577,14 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.100 2008/03/07 23:15:01 rtoy Exp $
+;;; $Id: macros.l,v 1.101 2008/03/08 12:49:08 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.101  2008/03/08 12:49:08  rtoy
+;;; Make :list-directed output be more like Fortran.  There is quite a bit
+;;; of variation between, say, g77 and Sun Fortran, so we pick something
+;;; reasonably close.  We have a mix of g77 and Sun Fortran output.  Still
+;;; needs some work.
+;;;
 ;;; Revision 1.100  2008/03/07 23:15:01  rtoy
 ;;; Use ~? so we can control the format string to print out various
 ;;; objects for list-directed output.

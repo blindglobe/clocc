@@ -1,3 +1,5 @@
+(in-package :donlp2)
+
 (defun o8cpu (dum)
   (declare (ignore dum))
   (float (/ (get-internal-run-time)
@@ -8,7 +10,7 @@
   ;; Print out time and date to channel chan
   #+cmu
   (let ((stream (f2cl-lib::lun->stream chan)))
-    (format-universal-time stream (get-universal-time))
+    (ext:format-universal-time stream (get-universal-time))
     (terpri stream)))
 
 ;; Tell f2cl the function signatures

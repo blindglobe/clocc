@@ -1,15 +1,15 @@
 ;;; print misc special opjects
 ;;;
-;;; Copyright (C) 1997-2007 by Sam Steingold
+;;; Copyright (C) 1997-2008 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.23 2007/09/21 16:49:38 sds Exp $
+;;; $Id: miscprint.lisp,v 1.24 2008/03/10 21:12:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; `with-collect', `count-all'
+  ;; `with-collect'
   (require :cllib-simple (translate-logical-pathname "cllib:simple")))
 
 (in-package :cllib)
@@ -128,18 +128,21 @@ The inverse is `hash-table->alist'."
     (values value present-p)))
 
 (defun print-counts (count-ht &key (out *standard-output*) (key-numeric-p nil)
-                     (format (if key-numeric-p
-                                 (formatter "~&;; ~5:D --> ~5:D~%")
-                                 (formatter "~&;; ~5A --> ~5:D~%"))))
+                     (format
+                      (if key-numeric-p
+                          (formatter "~&;; ~5:D --> ~8:D (~:D, ~,2F%)~%")
+                          (formatter "~&;; ~5A --> ~8:D (~:D, ~,2F%)~%"))))
   "Print counts of elements, sorted by frequency.
 If KEY-NUMERIC-P is non-NIL, sort by KEY instead.
 Usage: (print-counts (count-all seq ...))"
   (when out
-    (loop :for (object . count)
-      :in (sort (cdr (hash-table->alist count-ht))
-                #'< :key (if key-numeric-p #'car #'cdr))
+    (loop :with alist = (sort (cdr (hash-table->alist count-ht))
+                              #'> :key (if key-numeric-p #'car #'cdr))
+      :with total = (reduce #'+ alist :key #'cdr) :with cumul = 0
+      :for (object . count) :in alist
       :for line :upfrom 0 :until (and *print-lines* (> line *print-lines*))
-      :do (format out format object count))))
+      :do (format out format object count (incf cumul count)
+                  (/ cumul 1s-2 total)))))
 
 ;;;###autoload
 (defun make-ht-readtable (&optional (rt (copy-readtable)))

@@ -32,6 +32,15 @@ o Ran the following tests successfully:
       ex-dembo4, ex-dembo7, ex-maratos, ex-paviani2, ex-undefexa,
       ex-weaponas 
 
+o Support the following types of implied-do loops in DATA statements.
+  These are from hs109.f and tp383mod.f:
+
+      DATA X/NX*0.0D0/
+      DATA (A(I),A(I+7),I=1,7)/.../
+
+  These changes allow us to compile hs109.f and tp383mod.f
+  successfully.  The tests pass too.
+
 
 Feb 2007
 ------------

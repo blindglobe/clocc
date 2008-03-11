@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.204 2008/03/11 17:39:13 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.205 2008/03/11 21:36:33 rtoy Rel $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -2552,6 +2552,7 @@ FILENAME                 File containing Fortran code
 				    (mapcar #'list (remove '|,| indices)))
 			    (list (parse-expression indices))))
 	  ;;(format t "indices = ~S~%" indices)
+	  (setf var (check-reserved-lisp-names var))
 	  (push `(,var ,indices) body)
 	  (push var var-list)))
       (setf body (nreverse body))
@@ -3089,8 +3090,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.204 2008/03/11 17:39:13 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.205 2008/03/11 21:36:33 rtoy Rel $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.205  2008/03/11 21:36:33  rtoy
+;;; Need to check for reserved names in data implied-do loops.
+;;;
 ;;; Revision 1.204  2008/03/11 17:39:13  rtoy
 ;;; Oops.  Weren't correctly setting up the indices in the data
 ;;; implied-do.

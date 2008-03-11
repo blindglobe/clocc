@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.203 2008/03/11 16:54:21 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.204 2008/03/11 17:39:13 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -2546,8 +2546,13 @@ FILENAME                 File containing Fortran code
 	(destructuring-bind (var indices)
 	    data-var
 	  ;; We probably need to run check-reserved-lisp-names over the indices
-	  (setf indices (parse-expression (remove '|,| indices)))
-	  (push `(,var (,indices)) body)
+	  ;;(format t "indices = ~S~%" indices)
+	  (setf indices (if (member '|,| indices)
+			    (mapcar #'parse-expression
+				    (mapcar #'list (remove '|,| indices)))
+			    (list (parse-expression indices))))
+	  ;;(format t "indices = ~S~%" indices)
+	  (push `(,var ,indices) body)
 	  (push var var-list)))
       (setf body (nreverse body))
       (setf var-list (nreverse var-list))
@@ -3084,8 +3089,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.203 2008/03/11 16:54:21 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.204 2008/03/11 17:39:13 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.204  2008/03/11 17:39:13  rtoy
+;;; Oops.  Weren't correctly setting up the indices in the data
+;;; implied-do.
+;;;
 ;;; Revision 1.203  2008/03/11 16:54:21  rtoy
 ;;; f2cl1.l:
 ;;; o Support data statements of the form (from hs109.f):

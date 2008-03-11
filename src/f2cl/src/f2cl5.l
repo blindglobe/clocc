@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.189 2008/03/06 22:02:26 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.190 2008/03/11 16:54:21 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -1631,7 +1631,7 @@
 						(destructuring-bind (vtype &rest vars)
 						    d
 						  (when (member v vars :key #'car)
-						    (return-from get-types (list vtype)))))))
+						    (return (list vtype)))))))
 					vars)
 				))
 
@@ -1648,7 +1648,9 @@
 			      (destructuring-bind (ido loop var vals)
 				  init
 				(declare (ignore ido))
-				`(data-implied-do ,loop ,(get-dims var) ,(get-types var)
+				`(data-implied-do ,loop
+						  ,@(mapcar #'get-dims var)
+						  ,@(mapcar #'get-types var)
 						  ,vals)))
 			     ((and (eq 'replace (first init))
 				   (not (search "/blockdata" (string (second defun-bit))
@@ -3808,8 +3810,26 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.189 2008/03/06 22:02:26 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.190 2008/03/11 16:54:21 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.190  2008/03/11 16:54:21  rtoy
+;;; f2cl1.l:
+;;; o Support data statements of the form (from hs109.f):
+;;;
+;;;      data x /nx*0/
+;;;
+;;;   where nx is initialized in a PARAMETER statement.
+;;; o Recognize and handle implied-do loops in data statements like the
+;;;   following (from tp383mod.f):
+;;;
+;;;      data (a(j), a(j+1), j=1,7) /.../
+;;;
+;;;
+;;; f2cl5.l:
+;;; o Support changes in f2cl1.l to support those kinds of data implied-do
+;;;   loops.  Basically just need to get the dimensions and types for
+;;;   lists of variables instead of just one variable.
+;;;
 ;;; Revision 1.189  2008/03/06 22:02:26  rtoy
 ;;; Check for new variables in READ statements.
 ;;;

@@ -338,11 +338,10 @@
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
-;; Doesn't work because f2cl doesn't know how to handle
+;; Must call (/blockdata/) before running (donlp2).  Output in
+;; HS109*.*
 ;;
-;; DATA X/NX*0.0D0/
-;;
-;; where NX is a PARAMETER..
+;; Works.
 (mk:defsystem ex-hs109
   :source-pathname *donlp2-root*
   :depends-on ("donlp2")
@@ -393,10 +392,7 @@
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
-;; F2cl doesn't understand
-;;
-;;       DATA (A(I),A(I+7),I=1,7)/
-;;
+;; Works.  Output in TP383MOD.*
 (mk:defsystem ex-tp383mod
   :source-pathname *donlp2-root*
   :depends-on ("donlp2")

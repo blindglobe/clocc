@@ -96,6 +96,10 @@
 ;; Appears to work.  Output, though, is a little different from the
 ;; Fortran code.  Some numbers appear to be only agree to about 6
 ;; digits or so.
+;;
+;; If you've been running the tests above in the same session (which
+;; works), you may have problems running this one.  Start this in a
+;; fresh lisp.
 (mk:defsystem ex-amplqp
   :source-pathname *donlp2-root*
   :depends-on ("donlp2")
@@ -110,8 +114,7 @@
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
-;; Output in ALKYLATI.*.  Output is messed up a bit, but the final
-;; results match the Fortran code results.
+;; Output in ALKYLATI.*.  Works.
 (mk:defsystem ex-alkylati
   :source-pathname *donlp2-root*
   :depends-on ("donlp2")

@@ -3,8 +3,12 @@
 ;;; This is a simple defsystem for converting QUADPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: quadpack.system,v 1.8 2008/02/25 19:40:46 rtoy Exp $
+;;; $Id: quadpack.system,v 1.9 2008/03/12 15:58:06 rtoy Rel $
 ;;; $Log: quadpack.system,v $
+;;; Revision 1.9  2008/03/12 15:58:06  rtoy
+;;; Fixup the quadpack-lisp system to generate just the lisp files in the
+;;; slatec package.
+;;;
 ;;; Revision 1.8  2008/02/25 19:40:46  rtoy
 ;;; o Clean up definition of quadpack logical host.
 ;;; o Remove unused code.
@@ -215,17 +219,29 @@
     :components
     ((:file "quadpack-tests")))
 
+
+;;; System to convert the Fortran code to Lisp
 
+(mk:define-language :f2cl-lisp
+    :compiler #'f2cl:f2cl
+    :loader #'identity
+    :source-extension "f"
+    :binary-extension "lisp")
 
 (mk:defsystem quadpack-lisp
-    :source-pathname (translate-logical-pathname "quadpack:quadpack;Fortran;")
+    :source-pathname (translate-logical-pathname "quadpack:Fortran;")
     :depends-on ("mach-par")
+    :compiler-options (:array-slicing nil
+		       :array-type :simple-array
+		       :float-format double-float
+		       :package :slatec)
+    :language :f2cl-lisp
+    :compile-only t
     :components
     ((:module Fortran
 	      :source-pathname ""
 	      :binary-pathname "lib/"
 	      :source-extension "f"
-	      :language :f2cl-compile
 	      :components
 	      (
 	       ;; Support
@@ -287,8 +303,9 @@
 		      ;; If your defsystem doesn't support :compiler-options, use this:
 		      ;; :language :f2cl-no-slice
 		      ;; If your defsystem does support :compiler-options, use this:
-		      :compiler-options (:array-slicing nil :array-type :array)
-		      )
+		      :compiler-options (:array-slicing nil :array-type :array
+					 :float-format double-float
+					 :package :slatec))
 	       (:file "dqawoe"
 		      :depends-on ("dqc25f"
 				   "dqpsrt"

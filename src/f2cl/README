@@ -203,7 +203,7 @@ o Common blocks.
     In addition, there is another option, :common-as-array.  This
     changes how f2cl handles common blocks.   A rather common use of
     common blocks has the same common block using different variable
-    names.  For example, on routine might have
+    names.  For example, one routine might have
 
         COMMON /foo/ a(10), b, i(4)
 

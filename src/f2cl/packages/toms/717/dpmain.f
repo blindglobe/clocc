@@ -276,7 +276,7 @@ C        YN(1,I) = YN(1,I) / YN(2,I)
       GO TO 30
       END
       SUBROUTINE BRJ(N, P, X, NF, NEED, R, RP, UI, A, UF)
-      INTEGER N, P, NF, NEED(2), UI(5)
+      INTEGER N, P, NF, NEED(2), UI(7)
       DOUBLE PRECISION X(P), R(N), RP(P,N), A(*)
       EXTERNAL UF
       EXTERNAL BRJ1
@@ -289,7 +289,7 @@ C
  999  RETURN
       END
       SUBROUTINE BRJ1(M, N, P, X, NF, NEED, R, RP, UI, A, UR, UF)
-      INTEGER M, N, P, NF, NEED(2), UI(5)
+      INTEGER M, N, P, NF, NEED(2), UI(7)
       DOUBLE PRECISION X(P), R(N), RP(P,N), A(M,N), UR(N,6)
       EXTERNAL UF
       EXTERNAL DD7TPR, DR7MDC

@@ -36,7 +36,7 @@ madsen.out : madsen
 madsenb: madsenb.f dglfgb.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o
 	$(F77) -o $@ madsenb.f dglfgb.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o $L
 
-madsenb.out : madsen
+madsenb.out : madsenb
 	madsenb >$@
 
 pmain: dpmain.o mecdf.o dglfg.o dglfgb.o dgletc.o dmdc.o d1mach.o phi.o alnorm.o

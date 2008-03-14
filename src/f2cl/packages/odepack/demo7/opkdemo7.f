@@ -101,7 +101,7 @@ c
 c
 c Loop over method flag loop (for demonstration).
 c
-      do 101 meth = 1,2
+      do 100 meth = 1,2
        do 100 miter = 1,5
         if (miter .eq. 3)  go to 100
         if (miter .le. 2 .and. npts .gt. 10)  go to 100
@@ -159,7 +159,6 @@ c Estimate final error and print result.
           write (lout,5000)  errfac
         endif
   100   continue
-  101   continue
   200 continue
   300 continue
 c

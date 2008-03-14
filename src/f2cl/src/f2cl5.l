@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.191 2008/03/14 13:11:46 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.192 2008/03/14 19:59:03 rtoy Rel $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2818,6 +2818,9 @@
 	 ((null exprs)
 	  (error "A DO statement without a matching label?!"))
 	 ((multiple-do-labelp (car exprs) labels)
+	  ;; Sometimes we get duplicated labels, so remove them.  Is
+	  ;; REMOVE-DUPLICATES to general?  Should we be more careful?
+	  (setf loop-body (remove-duplicates loop-body))
 	  (values (append do-expr 
 			  (list (reverse loop-body))) exprs))
 
@@ -2853,8 +2856,29 @@
 		 (t (setq subclause (car exprs)
 			  exprs (cdr exprs)))))
 	  ((eq (car exprs) 'continue_place_holder)
-	   (setq subclause nil
-		 exprs (cdr exprs)))
+	   ;; Not really sure about this.  Basically we look to find
+	   ;; the next label, and make that the label for our do-loop.
+	   #+(or)
+	   (progn
+	     (format t "continue_place_holder~%")
+	     (format t "cdr exprs = ~S~%" (cdr exprs)))
+	   (let ((clabel 
+		  (dolist (item (cdr exprs))
+		    (unless (symbolp item)
+		      ;; Once an item isn't a symbol, our label can't
+		      ;; appear later, so give up.
+		      (return nil))
+		    (when (search (string '#:label)
+				       (string item))
+		      ;;(format t "continue label = ~S~%" item)
+		      (return item)))))
+
+	     ;; We only want clabel if there are do loops with the
+	     ;; same end label.  Otherwise, everything is ok.
+	     (setq subclause (if (multiple-do-labelp clabel labels)
+				 clabel
+				 nil)
+		   exprs (cdr exprs))))
 	  (t (setq subclause (car exprs)
 		   exprs (cdr exprs))))))
 
@@ -3810,8 +3834,22 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.191 2008/03/14 13:11:46 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.192 2008/03/14 19:59:03 rtoy Rel $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.192  2008/03/14 19:59:03  rtoy
+;;; Fix the issue with do loops with the same end statement.
+;;;
+;;; Not 100% sure this is correct and I still don't quite understand how
+;;; all of this works.
+;;;
+;;; odepack/demo7/opkdemo7.f:
+;;; o Revert to older code, where we use the same labels for the do loop.
+;;;   This is a test case for the changes we're making and was how we
+;;;   discovered the problem.
+;;;
+;;; f2cl5.l:
+;;; o Fix the issue with do loops.
+;;;
 ;;; Revision 1.191  2008/03/14 13:11:46  rtoy
 ;;; Use E as the exponent marker for Fortran G format descriptor.
 ;;;

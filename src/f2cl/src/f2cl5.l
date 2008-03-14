@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.190 2008/03/11 16:54:21 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.191 2008/03/14 13:11:46 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -3522,7 +3522,7 @@
 			      "~" (fixnum-string w) ","
 			      (fixnum-string d) ","
 			      (fixnum-string e) ","
-			      (fixnum-string k) ",'*"
+			      (fixnum-string k) ",'*,,'E"
 			      (if *SP* "@G" "G")))))
       (list a (list directive)))))
 
@@ -3810,8 +3810,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.190 2008/03/11 16:54:21 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.191 2008/03/14 13:11:46 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.191  2008/03/14 13:11:46  rtoy
+;;; Use E as the exponent marker for Fortran G format descriptor.
+;;;
 ;;; Revision 1.190  2008/03/11 16:54:21  rtoy
 ;;; f2cl1.l:
 ;;; o Support data statements of the form (from hs109.f):

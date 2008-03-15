@@ -99,6 +99,8 @@ libhompack.a : $(HOMPACK_SRC:.f=.o)
 	ar -r libhompack.a $^
 	ranlib libhompack.a
 
+tests: ref-mainf.txt ref-mainp.txt ref-mains.txt
+
 clean :
-	rm -f *.o
-	rm -f mainf mainp mains
+	$(RM) *.o
+	$(RM) mainf mainp mains

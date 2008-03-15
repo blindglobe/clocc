@@ -1,0 +1,14 @@
+1                    subroutine hwscrt example
+
+
+          the output from the ncar control data 7600 was
+
+                                ierror = 0
+                  discretization error = 5.36508e-04
+            required length of w array = 880
+
+          the output from your computer is
+
+                                ierror = 0
+                  discretization error = 0.49305E-03
+            required length of w array =880.

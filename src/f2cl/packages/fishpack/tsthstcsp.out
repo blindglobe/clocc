@@ -1,0 +1,14 @@
+1                    subroutine hstcsp example
+
+
+          the output from the ncar control data 7600 was
+
+                                ierror = 0
+                  discretization error = 5.58432e-03
+            required length of w array = 583
+
+          the output from your computer is
+
+                                ierror = 0
+                  discretization error = 0.55845E-02
+            required length of w array =583.

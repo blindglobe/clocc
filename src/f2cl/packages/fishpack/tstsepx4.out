@@ -1,0 +1,16 @@
+1                    subroutine sepx4  example
+
+
+                    the output from the ncar control data 7600 was
+
+                    ierror = 0
+                    second order discretization error =  1.5985e-04 
+                    fourth order discretization error =  1.85749e-06
+                    required length of w array = 1024
+
+                    the output from your computer is
+
+                    ierror = 0
+                    second order discretization error =  0.15044E-03
+                    fourth order discretization error =  0.15736E-04
+                    required length of w array =  1024

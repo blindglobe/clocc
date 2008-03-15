@@ -1,0 +1,14 @@
+1                    subroutine hwsplr example
+
+
+          the output from the ncar control data 7600 was
+
+                                ierror = 0
+                  discretization error = 6.19134e-04
+            required length of w array = 882
+
+          the output from your computer is
+
+                                ierror = 0
+                  discretization error = 0.62072E-03
+            required length of w array =882.

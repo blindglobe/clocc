@@ -1,0 +1,16 @@
+1                    subroutine hstcyl example
+
+
+          the output from the ncar control data 7600 was
+
+                                ierror = 0
+                                pertrb =-4.43114e-04
+                  discretization error = 7.52796e-05
+            required length of w array = 958
+
+          the output from your computer is
+
+                                ierror = 0
+                                pertrb =-0.44321E-03
+                  discretization error = 0.73349E-04
+            required length of w array =958.

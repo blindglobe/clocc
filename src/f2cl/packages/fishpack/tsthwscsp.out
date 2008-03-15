@@ -1,0 +1,28 @@
+1                    subroutine hwscsp example 1
+
+
+          the output from the ncar control data 7600 was
+
+                                ierror = 0
+                  discretization error = 7.99842e-04
+            required length of w array = 775
+
+          the output from your computer is
+
+                                ierror = 0
+                  discretization error = 0.79940E-03
+            required length of w array = 775
+1                    subroutine hwscsp example 2
+
+
+          the output from the ncar control data 7600 was
+
+                                ierror = 0
+                  discretization error = 5.86824e-05
+            required length of w array = 775
+
+          the output from your computer is
+
+                                ierror = 0
+                  discretization error = 0.57191E-04
+            required length of w array = 775

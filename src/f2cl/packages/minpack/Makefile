@@ -29,14 +29,17 @@ tst-lmder : tst-lmder.o $(MINPACK:.f=.o)
 tst-lmdif : tst-lmdif.o  $(MINPACK:.f=.o)
 	$(F77) -o $@ $^
 
-run-lmdif : tst-lmdif
+lmdif-ref.txt : tst-lmdif
 	tst-lmdif < lmdif-input.dat | tee lmdif-ref.txt
 
-run-lmder : tst-lmder
+lmder-ref.txt : tst-lmder
 	tst-lmder < lmdif-input.dat | tee lmder-ref.txt
 
-run-hybrd : tst-hybrd
+hybrd-ref.txt : tst-hybrd
 	tst-hybrd < hybrd-input.dat | tee hybrd-ref.txt
 
+tests : lmdif-ref.txt lmder-ref.txt hybrd-ref.txt
+
 clean :
-	rm -f *.o tst-hybrd tst-lmder tst-lmdif
+	$(RM) *.o tst-hybrd tst-lmder tst-lmdif 
+	$(RM) lmdif-ref.txt lmder-ref.txt hybrd-ref.txt

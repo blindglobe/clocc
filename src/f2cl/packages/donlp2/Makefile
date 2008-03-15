@@ -124,3 +124,36 @@ weaponas: donlp2main.o weaponas.o libdonlp2.a
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 
+
+PROGS = \
+	antenna1  \
+	hs101  \
+	hs102  \
+	hs103  \
+	betting  \
+	chemequi  \
+	alkylati  \
+	amplqp  \
+	fractf77new  \
+	girder  \
+	irreg1  \
+	irreg2  \
+	net1  \
+	boxparam  \
+	barnes \
+	dembo1as \
+	dembo4 \
+	dembo7 \
+	hs109 \
+	maratos \
+	paviani2 \
+	tp383mod \
+	undefexa \
+	weaponas
+
+tests : $(PROGS)
+	for f in $^; do $$f; done
+
+clean :
+	$(RM) *.o
+	$(RM) $(PROGS)

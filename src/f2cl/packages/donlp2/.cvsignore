@@ -4,6 +4,7 @@ amplqp
 amplqp.lisp
 antenna1
 antenna1.lisp
+barnes
 barnes.lisp
 betting
 betting.lisp
@@ -11,8 +12,11 @@ boxparam
 boxparam.lisp
 chemequi
 chemequi.lisp
+dembo1as
 dembo1as.lisp
+dembo4
 dembo4.lisp
+dembo7
 dembo7.lisp
 donlp2.lisp
 dummy-usr.lisp
@@ -33,6 +37,7 @@ hs102
 hs102.lisp
 hs103
 hs103.lisp
+hs109
 hs109.lisp
 irreg1
 irreg1.lisp

@@ -133,7 +133,7 @@ C
       CALL CPOLY(P,PI,12,ZR,ZI,FAIL)
       IF(FAIL) GO TO 99
       CALL PRTZ(12,ZR,ZI)
-      RETURN
+ 999
    95 WRITE(6,105)
       GO TO 2
    96 WRITE(6,105)
@@ -143,6 +143,7 @@ C
    98 WRITE(6,105)
       GO TO 5
    99 WRITE(6,105)
-      RETURN
+c      RETURN
   105 FORMAT(//' CPOLY HAS FAILED ON THIS EXAMPLE')
+  999 continue
       END

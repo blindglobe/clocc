@@ -133,7 +133,7 @@ C
       CALL CPOLY(P,PI,12,ZR,ZI,FAIL)
       IF(FAIL) GO TO 99
       CALL PRTZ(12,ZR,ZI)
- 999
+      goto 999
    95 WRITE(6,105)
       GO TO 2
    96 WRITE(6,105)

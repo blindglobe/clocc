@@ -1,0 +1,250 @@
+1Test of Ei(x) vs series expansion
+
+
+   2000 Random arguments were tested from the interval (  0.188,  0.310)
+
+
+     EI(X) was larger   424 times,
+               agreed   690 times, and
+          was smaller   886 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.6446E-015 =    2 ** -50.46
+    occurred for X =0.309962E+000
+ The estimated loss of base   2 significant digits is   2.54
+
+
+ The root mean square relative error was    0.1840E-015 =    2 ** -52.27
+ The estimated loss of base   2 significant digits is   0.73
+
+
+1Test of Ei(x) vs series expansion
+
+
+   2000 Random arguments were tested from the interval (  0.435,  6.000)
+
+
+     EI(X) was larger   590 times,
+               agreed   692 times, and
+          was smaller   718 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.1353E-014 =    2 ** -49.39
+    occurred for X =0.597034E+001
+ The estimated loss of base   2 significant digits is   3.61
+
+
+ The root mean square relative error was    0.2511E-015 =    2 ** -51.82
+ The estimated loss of base   2 significant digits is   1.18
+
+
+1Test of Ei(x) vs series expansion
+
+
+   2000 Random arguments were tested from the interval (  6.000, 12.000)
+
+
+     EI(X) was larger   601 times,
+               agreed   835 times, and
+          was smaller   564 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.9674E-015 =    2 ** -49.88
+    occurred for X =0.603158E+001
+ The estimated loss of base   2 significant digits is   3.12
+
+
+ The root mean square relative error was    0.1563E-015 =    2 ** -52.51
+ The estimated loss of base   2 significant digits is   0.49
+
+
+1Test of Ei(x) vs series expansion
+
+
+   2000 Random arguments were tested from the interval ( 12.000, 24.000)
+
+
+     EI(X) was larger   616 times,
+               agreed   827 times, and
+          was smaller   557 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.4728E-015 =    2 ** -50.91
+    occurred for X =0.147402E+002
+ The estimated loss of base   2 significant digits is   2.09
+
+
+ The root mean square relative error was    0.1486E-015 =    2 ** -52.58
+ The estimated loss of base   2 significant digits is   0.42
+
+
+1Test of Ei(x) vs series expansion
+
+
+   2000 Random arguments were tested from the interval ( 24.000, 48.000)
+
+
+     EI(X) was larger   581 times,
+               agreed   890 times, and
+          was smaller   529 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.4874E-015 =    2 ** -50.87
+    occurred for X =0.307363E+002
+ The estimated loss of base   2 significant digits is   2.13
+
+
+ The root mean square relative error was    0.1396E-015 =    2 ** -52.67
+ The estimated loss of base   2 significant digits is   0.33
+
+
+1Test of Ei(x) vs series expansion
+
+
+   2000 Random arguments were tested from the interval ( -0.250, -1.000)
+
+
+     EI(X) was larger   627 times,
+               agreed   885 times, and
+          was smaller   488 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.7329E-015 =    2 ** -50.28
+    occurred for X =-.979094E+000
+ The estimated loss of base   2 significant digits is   2.72
+
+
+ The root mean square relative error was    0.1595E-015 =    2 ** -52.48
+ The estimated loss of base   2 significant digits is   0.52
+
+
+1Test of Ei(x) vs series expansion
+
+
+   2000 Random arguments were tested from the interval ( -1.000, -4.000)
+
+
+     EI(X) was larger   719 times,
+               agreed   554 times, and
+          was smaller   727 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.7898E-015 =    2 ** -50.17
+    occurred for X =-.183599E+001
+ The estimated loss of base   2 significant digits is   2.83
+
+
+ The root mean square relative error was    0.2324E-015 =    2 ** -51.93
+ The estimated loss of base   2 significant digits is   1.07
+
+
+1Test of Ei(x) vs series expansion
+
+
+   2000 Random arguments were tested from the interval ( -4.000,-10.000)
+
+
+     EI(X) was larger   542 times,
+               agreed   871 times, and
+          was smaller   587 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.4405E-015 =    2 ** -51.01
+    occurred for X =-.658541E+001
+ The estimated loss of base   2 significant digits is   1.99
+
+
+ The root mean square relative error was    0.1436E-015 =    2 ** -52.63
+ The estimated loss of base   2 significant digits is   0.37
+
+
+
+
+ Test of special arguments
+
+
+   EI (0.375000E+000) = 0.969138E-002
+
+
+ The relative error is    0.1398E-016 =    2 ** -55.99
+
+ The estimated loss of base   2 significant digits is   0.00
+
+
+ Test of Error Returns
+
+
+
+ EONE will be called with the argument0.701800E+003
+ This should not underflow
+
+
+ EONE returned the value0.231901E-307
+
+
+
+ EONE will be called with the argument0.701844E+003
+ This should underflow
+
+
+ EONE returned the value0.000000E+000
+
+
+
+ EI will be called with the argument0.716300E+003
+ This should not overflow
+
+
+ EI returned the value0.170079E+309
+
+
+
+ EI will be called with the argument0.716356E+003
+ This should overflow
+
+
+ EI returned the value0.179000E+309
+
+
+
+ EXPEI will be called with the argument0.449423E+308
+ This should not underflow
+
+
+ EXPEI returned the value0.222507E-307
+
+
+
+ EI will be called with the argument0.000000E+000
+ This should overflow
+
+
+ EI returned the value-.179000E+309
+
+
+
+ This concludes the tests

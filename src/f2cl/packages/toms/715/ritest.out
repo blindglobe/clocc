@@ -1,0 +1,150 @@
+1Test of I(X,ALPHA) vs Multiplication Theorem
+
+
+   2000 Random arguments were tested from the interval ( 0.00, 2.00)
+
+
+ I(X,ALPHA) was larger   807 times,
+                agreed   489 times, and
+           was smaller   704 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.1959E-014 =    2 ** -48.86
+    occurred for X =0.158844E+001 and NU =0.129939E+000
+ The estimated loss of base   2 significant digits is   4.14
+
+
+ The root mean square relative error was    0.4868E-015 =    2 ** -50.87
+ The estimated loss of base   2 significant digits is   2.13
+
+
+1Test of I(X,ALPHA) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval ( 2.00, 4.00)
+
+
+ I(X,ALPHA) was larger   762 times,
+                agreed   463 times, and
+           was smaller   775 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.2104E-014 =    2 ** -48.76
+    occurred for X =0.215264E+001 and NU =0.483517E+000
+ The estimated loss of base   2 significant digits is   4.24
+
+
+ The root mean square relative error was    0.5835E-015 =    2 ** -50.61
+ The estimated loss of base   2 significant digits is   2.39
+
+
+1Test of I(X,ALPHA) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval ( 4.00,10.00)
+
+
+ I(X,ALPHA) was larger   826 times,
+                agreed   394 times, and
+           was smaller   780 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.3311E-014 =    2 ** -48.10
+    occurred for X =0.997413E+001 and NU =0.711086E-001
+ The estimated loss of base   2 significant digits is   4.90
+
+
+ The root mean square relative error was    0.4786E-015 =    2 ** -50.89
+ The estimated loss of base   2 significant digits is   2.11
+
+
+1Test of I(X,ALPHA) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval (10.00,20.00)
+
+
+ I(X,ALPHA) was larger   807 times,
+                agreed   391 times, and
+           was smaller   802 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.1748E-014 =    2 ** -49.02
+    occurred for X =0.146957E+002 and NU =0.619949E+000
+ The estimated loss of base   2 significant digits is   3.98
+
+
+ The root mean square relative error was    0.4281E-015 =    2 ** -51.05
+ The estimated loss of base   2 significant digits is   1.95
+
+
+1Check of Error Returns
+
+
+ The following summarizes calls with indicated parameters
+
+ NCALC different from MB indicates some form of error
+
+ See documentation for RIBESL for details
+
+       ARG            ALPHA      MB   IZ       RES      NCALC
+
+
+ 0.1000000E+001 0.1500000E+001    5    2 0.0000000E+000   -1
+
+
+ 0.1000000E+001 0.5000000E+000   -5    2 0.0000000E+000   -6
+
+
+ 0.1000000E+001 0.5000000E+000    5    5 0.0000000E+000   -1
+
+
+ 0.0000000E+000 0.4916594E+000    2    1 0.0000000E+000    2
+
+
+ 0.0000000E+000 0.0000000E+000    2    1 0.1000000E+001    2
+
+
+ 0.0000000E+000 0.1000000E+001    2    1 0.0000000E+000   -1
+
+
+ RIBESL will be called with the argument-.100000E+001
+ This should trigger an error message.
+ NCALC returned the value   -1
+ and RIBESL returned the value0.000000E+000
+
+ Tests near the largest argument for scaled functions
+
+ RIBESL will be called with the argument0.999878E+004
+ NCALC returned the value    2
+ and RIBESL returned the valueNaN          
+
+ RIBESL will be called with the argument0.100012E+005
+ This should trigger an error message.
+ NCALC returned the value   -1
+ and RIBESL returned the value0.000000E+000
+
+ Tests near the largest argument for unscaled functions
+
+ RIBESL will be called with the argument0.708913E+003
+ NCALC returned the value    2
+ and RIBESL returned the value0.112931E+307
+
+ RIBESL will be called with the argument0.709087E+003
+ This should trigger an error message.
+ NCALC returned the value   -1
+ and RIBESL returned the value0.000000E+000
+
+ This concludes the tests.

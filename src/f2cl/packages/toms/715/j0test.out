@@ -1,0 +1,93 @@
+1Test of J0(X) VS Taylor expansion
+
+
+   2000 random arguments were tested from the interval (  0.0,  4.0)
+
+
+ ABS(J0(X)) was larger   830 times
+                agreed   642 times, and
+           was smaller   528 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.1471E-014 =    2 ** -49.27
+    occurred for X =0.243685E+001
+ The estimated loss of base   2 significant digits is   3.73
+
+
+ The root mean square relative error was    0.2129E-015 =    2 ** -52.06
+ The estimated loss of base   2 significant digits is   0.94
+
+
+1Test of J0(X) VS Taylor expansion
+
+
+   2000 random arguments were tested from the interval (  4.0,  8.0)
+
+
+ ABS(J0(X)) was larger   641 times
+                agreed   561 times, and
+           was smaller   798 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.1256E-014 =    2 ** -49.50
+    occurred for X =0.399021E+001
+ The estimated loss of base   2 significant digits is   3.50
+
+
+ The root mean square relative error was    0.2444E-015 =    2 ** -51.86
+ The estimated loss of base   2 significant digits is   1.14
+
+
+1Test of J0(X) VS Taylor expansion
+
+
+   2000 random arguments were tested from the interval (  8.0, 20.0)
+
+
+ ABS(J0(X)) was larger   653 times
+                agreed   597 times, and
+           was smaller   750 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.8563E-015 =    2 ** -50.05
+    occurred for X =0.909661E+001
+ The estimated loss of base   2 significant digits is   2.95
+
+
+ The root mean square relative error was    0.2136E-015 =    2 ** -52.06
+ The estimated loss of base   2 significant digits is   0.94
+
+
+1Special Tests
+
+
+ Accuracy near zeros
+
+          X               BESJ0(X)             Loss of base  2 digits
+
+   0.2406250000E+001  -0.739276482217002E-003           0.40
+
+   0.5519531250E+001  -0.186086517975739E-003           1.39
+
+
+
+ Test with extreme arguments
+
+
+
+ J0 will be called with the argument 0.1797693135E+309
+ This may stop execution.
+
+
+ J0 returned the value 0.00000000000000000E+000
+
+ This concludes the tests.

@@ -1,0 +1,90 @@
+1Test of K1(X) vs Multiplication Theorem
+
+
+   2000 random arguments were tested from the interval (  0.0,  1.0)
+
+
+ ABS(K1(X)) was larger   675 times,
+                     agreed   686 times, and
+                was smaller   639 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.6855E-015 =    2 ** -50.37
+    occurred for X =0.957150E+000
+ The estimated loss of base   2 significant digits is   2.63
+
+
+ The root mean square relative error was    0.1804E-015 =    2 ** -52.30
+ The estimated loss of base   2 significant digits is   0.70
+
+
+1Test of K1(X) vs Multiplication Theorem
+
+
+   2000 random arguments were tested from the interval (  1.0,  8.0)
+
+
+ ABS(K1(X)) was larger   707 times,
+                     agreed   517 times, and
+                was smaller   776 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.9307E-015 =    2 ** -49.93
+    occurred for X =0.349511E+001
+ The estimated loss of base   2 significant digits is   3.07
+
+
+ The root mean square relative error was    0.2529E-015 =    2 ** -51.81
+ The estimated loss of base   2 significant digits is   1.19
+
+
+1Test of K1(X) vs Multiplication Theorem
+
+
+   2000 random arguments were tested from the interval (  8.0, 20.0)
+
+
+ ABS(K1(X)) was larger   808 times,
+                     agreed   592 times, and
+                was smaller   600 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum absolute error of    0.7085E-015 =    2 ** -50.33
+    occurred for X =0.124094E+002
+ The estimated loss of base   2 significant digits is   2.67
+
+
+ The root mean square absolute error was    0.2137E-015 =    2 ** -52.06
+ The estimated loss of base   2 significant digits is   0.94
+
+
+1Special Tests
+
+
+
+
+ Test with extreme arguments
+
+ K1(XLEAST) = 0.44843049327354256E+308
+
+ K1(XMIN) = 0.17900000000000000E+309
+
+ K1(0) = 0.17900000000000000E+309
+
+ K1(-.50309916939771782E+000 ) = 0.17900000000000000E+309
+
+ E**X * K1(XMAX) = 0.93476438793292451E-154
+
+ K1(0.66125943635324325E+003 ) = 0.32121497573487907E-288
+
+ K1(0.79351132362389194E+003 ) = 0.00000000000000000E+000
+

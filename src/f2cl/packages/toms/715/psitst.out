@@ -1,0 +1,136 @@
+1
+ Test of PSI(X) vs (PSI(X/2)+PSI(X/2+1/2))/2 + ln(2)
+
+
+   2000 random arguments were tested from the interval (  0.0,  1.0)
+
+
+ ABS(PSI(X)) was larger   579 times
+                      agreed   703 times, and
+                 was smaller   718 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.1004E-014 =    2 ** -49.82
+    occurred for X =0.949543E+000
+ The estimated loss of base   2 significant digits is   3.18
+
+
+ The root mean square relative error was    0.2201E-015 =    2 ** -52.01
+ The estimated loss of base   2 significant digits is   0.99
+
+
+ Test of PSI(X) vs (PSI(X/2)+PSI(X/2+1/2))/2 + ln(2)
+
+
+   2000 random arguments were tested from the interval (  2.0,  8.0)
+
+
+ ABS(PSI(X)) was larger   507 times
+                      agreed   965 times, and
+                 was smaller   528 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.7585E-015 =    2 ** -50.23
+    occurred for X =0.255944E+001
+ The estimated loss of base   2 significant digits is   2.77
+
+
+ The root mean square relative error was    0.1409E-015 =    2 ** -52.66
+ The estimated loss of base   2 significant digits is   0.34
+
+
+1
+ Test of PSI(X) vs (PSI(X/2)+PSI(X/2+1/2))/2 + ln(2)
+
+
+   2000 random arguments were tested from the interval (  8.0, 20.0)
+
+
+ ABS(PSI(X)) was larger   436 times
+                      agreed  1371 times, and
+                 was smaller   193 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.3215E-015 =    2 ** -51.47
+    occurred for X =0.163321E+002
+ The estimated loss of base   2 significant digits is   1.53
+
+
+ The root mean square relative error was    0.9800E-016 =    2 ** -53.18
+ The estimated loss of base   2 significant digits is   0.00
+
+
+ Test of PSI(X) vs (PSI(X/2)+PSI(X/2+1/2))/2 + ln(2)
+
+
+    500 random arguments were tested from the interval (-17.6,-16.9)
+
+
+ ABS(PSI(X)) was larger   167 times
+                      agreed   190 times, and
+                 was smaller   143 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.1072E-014 =    2 ** -49.73
+    occurred for X =-.176196E+002
+ The estimated loss of base   2 significant digits is   3.27
+
+
+ The root mean square relative error was    0.1763E-015 =    2 ** -52.33
+ The estimated loss of base   2 significant digits is   0.67
+
+
+1Special Tests
+
+
+ Accuracy near positive zero
+
+ PSI(0.1460938E+001) = -.67240239024288055E-003
+             Loss of base  2 digits =    0.54
+
+
+
+ Test with extreme arguments
+
+ PSI will be called with the argument 0.2225073859E-307
+ This should not stop execution.
+
+ PSI returned the value-0.17900000000000000E+309
+
+
+ PSI will be called with the argument 0.1797693135E+309
+ This should not stop execution.
+
+ PSI returned the value 0.70978271289338397E+003
+
+
+
+
+ Test of error returns
+
+
+ PSI will be called with the argument 0.0000000000E+000
+ This may stop execution.
+
+ PSI returned the value 0.17900000000000000E+309
+
+
+ PSI will be called with the argument -.1351079888E+017
+ This may stop execution.
+
+ PSI returned the value 0.17900000000000000E+309
+
+
+ This concludes the tests.

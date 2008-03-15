@@ -1,0 +1,105 @@
+1Test of Y1(X) VS Multiplication Theorem
+
+
+   2000 random arguments were tested from the interval (  0.0,  4.0)
+
+
+ ABS(Y1(X)) was larger   643 times
+                agreed   578 times, and
+           was smaller   779 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.9456E-015 =    2 ** -49.91
+    occurred for X =0.214071E+001
+ The estimated loss of base   2 significant digits is   3.09
+
+
+ The root mean square relative error was    0.2002E-015 =    2 ** -52.15
+ The estimated loss of base   2 significant digits is   0.85
+
+
+1Test of Y1(X) VS Multiplication Theorem
+
+
+   2000 random arguments were tested from the interval (  4.0,  8.0)
+
+
+ ABS(Y1(X)) was larger   813 times
+                agreed   353 times, and
+           was smaller   834 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.5160E-014 =    2 ** -47.46
+    occurred for X =0.798641E+001
+ The estimated loss of base   2 significant digits is   5.54
+
+
+ The root mean square relative error was    0.8008E-015 =    2 ** -50.15
+ The estimated loss of base   2 significant digits is   2.85
+
+
+1Test of Y1(X) VS Multiplication Theorem
+
+
+    500 random arguments were tested from the interval (  8.0, 20.0)
+
+
+ ABS(Y1(X)) was larger   220 times
+                agreed    85 times, and
+           was smaller   195 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.9296E-015 =    2 ** -49.93
+    occurred for X =0.175770E+002
+ The estimated loss of base   2 significant digits is   3.07
+
+
+ The root mean square relative error was    0.2471E-015 =    2 ** -51.85
+ The estimated loss of base   2 significant digits is   1.15
+
+
+1Special Tests
+
+
+ Accuracy near zeros
+
+          X               BESY1(X)             Loss of base  2 digits
+
+   0.2195312500E+001  -0.952823930977227E-003           0.04
+
+   0.5429687500E+001  -0.219818300805980E-005           0.80
+
+
+
+ Test with extreme arguments
+
+
+
+ Y1 will be called with the argument 0.2225073859E-307
+ This should not stop execution.
+
+
+ Y1 returned the value-0.28611174857570283E+308
+
+ Y1 will be called with the argument -.1000000000E+001
+ This may stop execution.
+
+
+ Y1 returned the value-0.17900000000000000E+309
+
+ Y1 will be called with the argument 0.1797693135E+309
+ This may stop execution.
+
+
+ Y1 returned the value 0.00000000000000000E+000
+
+ This concludes the tests.

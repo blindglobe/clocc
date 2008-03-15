@@ -1,0 +1,145 @@
+1Test of Dawson's Integral vs Taylor expansion
+
+
+   2000 Random arguments were tested from the interval ( 0.06, 1.00)
+
+
+  F(X) was larger   521 times,
+           agreed   997 times, and
+      was smaller   482 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.4301E-015 =    2 ** -51.05
+    occurred for X =0.721184E+000
+ The estimated loss of base   2 significant digits is   1.95
+
+
+ The root mean square relative error was    0.1342E-015 =    2 ** -52.73
+ The estimated loss of base   2 significant digits is   0.27
+
+
+1Test of Dawson's Integral vs Taylor expansion
+
+
+   2000 Random arguments were tested from the interval ( 1.00, 2.50)
+
+
+  F(X) was larger   649 times,
+           agreed   778 times, and
+      was smaller   573 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.6140E-015 =    2 ** -50.53
+    occurred for X =0.216001E+001
+ The estimated loss of base   2 significant digits is   2.47
+
+
+ The root mean square relative error was    0.1633E-015 =    2 ** -52.44
+ The estimated loss of base   2 significant digits is   0.56
+
+
+1Test of Dawson's Integral vs Taylor expansion
+
+
+   2000 Random arguments were tested from the interval ( 2.50, 5.00)
+
+
+  F(X) was larger   502 times,
+           agreed  1071 times, and
+      was smaller   427 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.3809E-015 =    2 ** -51.22
+    occurred for X =0.253956E+001
+ The estimated loss of base   2 significant digits is   1.78
+
+
+ The root mean square relative error was    0.1133E-015 =    2 ** -52.97
+ The estimated loss of base   2 significant digits is   0.03
+
+
+1Test of Dawson's Integral vs Taylor expansion
+
+
+   2000 Random arguments were tested from the interval ( 5.00,10.00)
+
+
+  F(X) was larger   405 times,
+           agreed  1172 times, and
+      was smaller   423 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.3080E-015 =    2 ** -51.53
+    occurred for X =0.563946E+001
+ The estimated loss of base   2 significant digits is   1.47
+
+
+ The root mean square relative error was    0.1033E-015 =    2 ** -53.10
+ The estimated loss of base   2 significant digits is   0.00
+
+
+1Special Tests
+
+
+       Estimated loss of base  2 significant digits in
+
+        X          F(x)+F(-x)
+
+     0.222            0.00
+     3.784            0.00
+     1.036            0.00
+     1.447            0.00
+     0.893            0.00
+     3.668            0.00
+     2.438            0.00
+     0.696            0.00
+     2.983            0.00
+     0.936            0.00
+
+
+ Test of special arguments
+
+
+  F(XMIN) = 0.22250738585072014E-307
+
+ Test of Error Returns
+
+
+
+ DAW will be called with the argument0.223834E+308
+ This should not underflow
+
+
+ DAW returned the value0.223380E-307
+
+
+
+ DAW will be called with the argument0.224712E+308
+ This may underflow
+
+
+ DAW returned the value0.000000E+000
+
+
+
+ DAW will be called with the argument0.225589E+308
+ This may underflow
+
+
+ DAW returned the value0.000000E+000
+
+
+
+ This concludes the tests

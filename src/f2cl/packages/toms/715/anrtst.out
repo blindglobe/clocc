@@ -1,0 +1,137 @@
+1Test of anorm(x) vs double series expansion
+
+
+   2000 Random arguments were tested from the interval ( -0.663,  0.663)
+
+
+  ANORM(X) was larger   253 times,
+               agreed  1595 times, and
+          was smaller   152 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.4237E-015 =    2 ** -51.07
+    occurred for X =-.637105E+000
+ The estimated loss of base   2 significant digits is   1.93
+
+
+ The root mean square relative error was    0.8569E-016 =    2 ** -53.37
+ The estimated loss of base   2 significant digits is   0.00
+
+
+
+
+
+ Test of anorm(x) vs Taylor series about x-1/2
+
+
+   2000 Random arguments were tested from the interval ( -5.657, -0.663)
+
+
+  ANORM(X) was larger   691 times,
+               agreed   470 times, and
+          was smaller   839 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.1178E-014 =    2 ** -49.59
+    occurred for X =-.506677E+001
+ The estimated loss of base   2 significant digits is   3.41
+
+
+ The root mean square relative error was    0.2675E-015 =    2 ** -51.73
+ The estimated loss of base   2 significant digits is   1.27
+
+
+
+
+
+ Test of anorm(x) vs Taylor series about x-1/2
+
+
+   2000 Random arguments were tested from the interval (-37.000, -5.657)
+
+
+  ANORM(X) was larger   651 times,
+               agreed   700 times, and
+          was smaller   649 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.6139E-015 =    2 ** -50.53
+    occurred for X =-.318733E+002
+ The estimated loss of base   2 significant digits is   2.47
+
+
+ The root mean square relative error was    0.1785E-015 =    2 ** -52.32
+ The estimated loss of base   2 significant digits is   0.68
+
+
+1Special Tests
+
+
+       Check of identity anorm(X) + anorm(-X) = 1.0
+
+         X            ANORM(-x)   ANORM(x)+ANORM(-x)-1
+
+   0.503099E+001   0.243975E-006   0.000000E+000
+
+   0.887334E+001   0.354915E-018   0.000000E+000
+
+   0.916662E+001   0.244045E-019   0.000000E+000
+
+   0.582615E+001   0.283604E-008   0.000000E+000
+
+   0.826795E+001   0.681417E-016   0.000000E+000
+
+   0.349256E+001   0.239203E-003   0.000000E+000
+
+   0.657015E+001   0.251320E-010   0.000000E+000
+
+   0.126816E+001   0.102370E+000   0.000000E+000
+
+   0.852033E+001   0.795493E-017   0.000000E+000
+
+   0.504026E+001   0.232453E-006   0.000000E+000
+
+
+
+ Test of special arguments
+
+
+ ANORM (0.179769E+309) = 0.100000E+001
+
+
+ ANORM (0.000000E+000) = 0.500000E+000
+
+
+ ANORM (-.179769E+309) = 0.000000E+000
+
+
+ Test of Error Returns
+
+
+
+ ANORM will be called with the argument -.281395E+002
+ The result should not underflow
+
+
+ ANORM returned the value0.160919E-173
+
+
+
+ ANORM will be called with the argument -.375194E+002
+ The result may underflow
+
+
+ ANORM returned the value0.000000E+000
+
+
+
+ This concludes the tests

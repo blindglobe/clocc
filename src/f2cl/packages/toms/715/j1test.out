@@ -1,0 +1,116 @@
+1Test of J1(X) VS Maclaurin expansion
+
+
+   2000 random arguments were tested from the interval (  0.0,  1.0)
+
+
+ ABS(J1(X)) was larger   471 times
+                agreed   745 times, and
+           was smaller   784 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.4630E-015 =    2 ** -50.94
+    occurred for X =0.241570E+000
+ The estimated loss of base   2 significant digits is   2.06
+
+
+ The root mean square relative error was    0.1574E-015 =    2 ** -52.50
+ The estimated loss of base   2 significant digits is   0.50
+
+
+1Test of J1(X) VS local Taylor expansion
+
+
+   2000 random arguments were tested from the interval (  1.0,  4.0)
+
+
+ ABS(J1(X)) was larger   521 times
+                agreed   682 times, and
+           was smaller   797 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.1398E-014 =    2 ** -49.35
+    occurred for X =0.386887E+001
+ The estimated loss of base   2 significant digits is   3.65
+
+
+ The root mean square relative error was    0.2316E-015 =    2 ** -51.94
+ The estimated loss of base   2 significant digits is   1.06
+
+
+1Test of J1(X) VS local Taylor expansion
+
+
+   2000 random arguments were tested from the interval (  4.0,  8.0)
+
+
+ ABS(J1(X)) was larger   837 times
+                agreed   565 times, and
+           was smaller   598 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.9304E-015 =    2 ** -49.93
+    occurred for X =0.705297E+001
+ The estimated loss of base   2 significant digits is   3.07
+
+
+ The root mean square relative error was    0.2271E-015 =    2 ** -51.97
+ The estimated loss of base   2 significant digits is   1.03
+
+
+1Test of J1(X) VS local Taylor expansion
+
+
+   2000 random arguments were tested from the interval (  8.0, 20.0)
+
+
+ ABS(J1(X)) was larger   768 times
+                agreed   562 times, and
+           was smaller   670 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.9303E-015 =    2 ** -49.93
+    occurred for X =0.129085E+002
+ The estimated loss of base   2 significant digits is   3.07
+
+
+ The root mean square relative error was    0.2306E-015 =    2 ** -51.95
+ The estimated loss of base   2 significant digits is   1.05
+
+
+1Special Tests
+
+
+ Accuracy near zeros
+
+          X               BESJ1(X)             Loss of base  2 digits
+
+   0.3832031250E+001  -0.131003930013280E-003           0.90
+
+   0.7015625000E+001   0.115034607023017E-004           0.00
+
+
+
+ Test with extreme arguments
+
+
+
+ J1 will be called with the argument 0.1797693135E+309
+ This may stop execution.
+
+
+ J1 returned the value 0.00000000000000000E+000
+
+ This concludes the tests.

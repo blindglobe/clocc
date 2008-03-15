@@ -1,0 +1,152 @@
+1Test of GAMMA(X) vs Duplication Formula
+
+
+   2000 Random arguments were tested from the interval (  0.000,  2.000)
+
+
+ GAMMA(X) was larger   505 times,
+              agreed   866 times, and
+         was smaller   629 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.4409E-015 =    2 ** -51.01
+    occurred for X =0.987698E+000
+ The estimated loss of base   2 significant digits is   1.99
+
+
+ The root mean square relative error was    0.1308E-015 =    2 ** -52.76
+ The estimated loss of base   2 significant digits is   0.24
+
+
+1Test of GAMMA(X) vs Duplication Formula
+
+
+   2000 Random arguments were tested from the interval (  2.000, 10.000)
+
+
+ GAMMA(X) was larger   592 times,
+              agreed   740 times, and
+         was smaller   668 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.7041E-015 =    2 ** -50.33
+    occurred for X =0.933240E+001
+ The estimated loss of base   2 significant digits is   2.67
+
+
+ The root mean square relative error was    0.1749E-015 =    2 ** -52.34
+ The estimated loss of base   2 significant digits is   0.66
+
+
+1Test of GAMMA(X) vs Duplication Formula
+
+
+   2000 Random arguments were tested from the interval ( 10.000,171.124)
+
+
+ GAMMA(X) was larger  1045 times,
+              agreed     9 times, and
+         was smaller   946 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.2009E-012 =    2 ** -42.18
+    occurred for X =0.160347E+003
+ The estimated loss of base   2 significant digits is  10.82
+
+
+ The root mean square relative error was    0.4597E-013 =    2 ** -44.31
+ The estimated loss of base   2 significant digits is   8.69
+
+
+1Test of GAMMA(X) vs Duplication Formula
+
+
+   2000 Random arguments were tested from the interval ( -4.750, -4.250)
+
+
+ GAMMA(X) was larger  1203 times,
+              agreed   376 times, and
+         was smaller   421 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.1051E-014 =    2 ** -49.76
+    occurred for X =-.466196E+001
+ The estimated loss of base   2 significant digits is   3.24
+
+
+ The root mean square relative error was    0.3178E-015 =    2 ** -51.48
+ The estimated loss of base   2 significant digits is   1.52
+
+
+1Special Tests
+
+
+
+
+ Test of special arguments
+
+
+ GAMMA (-.500000E+000) = -.354491E+001
+
+
+ GAMMA (0.224755E-307) = 0.444929E+308
+
+
+ GAMMA (0.100000E+001) = 0.100000E+001
+
+
+ GAMMA (0.200000E+001) = 0.100000E+001
+
+
+ GAMMA (0.169908E+003) = 0.266542E+305
+
+
+1Test of Error Returns
+
+
+
+ GAMMA will be called with the argument-.100000E+001
+ This should trigger an error message
+
+
+ GAMMA returned the value0.179000E+309
+
+
+
+ GAMMA will be called with the argument0.000000E+000
+ This should trigger an error message
+
+
+ GAMMA returned the value0.179000E+309
+
+
+
+ GAMMA will be called with the argument0.222507E-307
+ This should trigger an error message
+
+
+ GAMMA returned the value0.179000E+309
+
+
+
+ GAMMA will be called with the argument0.171624E+003
+ This should trigger an error message
+
+
+ GAMMA returned the value0.179000E+309
+
+
+
+ This concludes the tests

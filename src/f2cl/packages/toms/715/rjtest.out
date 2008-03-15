@@ -1,0 +1,132 @@
+1Test of J(X,ALPHA) vs Multiplication Theorem
+
+
+   2000 Random arguments were tested from the interval ( 0.00, 2.00)
+
+
+ J(X,ALPHA) was larger   669 times,
+                agreed   684 times, and
+           was smaller   647 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.1002E-014 =    2 ** -49.83
+    occurred for X =0.198094E+001 and NU =0.181940E-001
+    with J(X,ALPHA) = 0.249289E+000
+ The estimated loss of base   2 significant digits is   3.17
+
+
+ The root mean square relative error was    0.2007E-015 =    2 ** -52.15
+ The estimated loss of base   2 significant digits is   0.85
+
+
+1Test of J(X,ALPHA) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval ( 2.00,10.00)
+
+
+ J(X,ALPHA) was larger   871 times,
+                agreed   307 times, and
+           was smaller   822 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.2234E-013 =    2 ** -45.35
+    occurred for X =0.300825E+001 and NU =0.254437E+000
+    with J(X,ALPHA) = -.101271E+000
+ The estimated loss of base   2 significant digits is   7.65
+
+
+ The root mean square relative error was    0.1049E-014 =    2 ** -49.76
+ The estimated loss of base   2 significant digits is   3.24
+
+
+1Test of J(X,ALPHA) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval (10.00,20.00)
+
+
+ J(X,ALPHA) was larger   881 times,
+                agreed   171 times, and
+           was smaller   948 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.1424E-013 =    2 ** -46.00
+    occurred for X =0.191810E+002 and NU =0.635013E+000
+    with J(X,ALPHA) = 0.224104E-001
+ The estimated loss of base   2 significant digits is   7.00
+
+
+ The root mean square relative error was    0.1459E-014 =    2 ** -49.28
+ The estimated loss of base   2 significant digits is   3.72
+
+
+1Test of J(X,ALPHA) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval (30.00,40.00)
+
+
+ J(X,ALPHA) was larger   623 times,
+                agreed   746 times, and
+           was smaller   631 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.3221E-014 =    2 ** -48.14
+    occurred for X =0.345550E+002 and NU =0.590546E+000
+    with J(X,ALPHA) = 0.193907E-001
+ The estimated loss of base   2 significant digits is   4.86
+
+
+ The root mean square relative error was    0.2132E-015 =    2 ** -52.06
+ The estimated loss of base   2 significant digits is   0.94
+
+
+1Check of Error Returns
+
+
+ The following summarizes calls with indicated parameters
+
+ NCALC different from MB indicates some form of error
+
+ See documentation for RJBESL for details
+
+       ARG            ALPHA      MB      B(1)      NCALC
+
+
+ 0.1000000E+001 0.1500000E+001    5 0.0000000E+000   -1
+
+
+ 0.1000000E+001 0.5000000E+000   -5 0.0000000E+000   -6
+
+
+ 0.0000000E+000 0.1000000E+001    2 0.0000000E+000   -1
+
+
+-0.1000000E+001 0.5000000E+000    5 0.0000000E+000   -1
+
+
+ Tests near the largest acceptable argument for RJBESL
+
+ RJBESL will be called with the argument0.999878E+004
+ NCALC returned the value    2
+ and RJBESL returned U(1) = 0.630030E-002
+
+ RJBESL will be called with the argument0.100012E+005
+ This should trigger an error message.
+ NCALC returned the value   -1
+ and RJBESL returned U(1) = 0.000000E+000
+
+ This concludes the tests.

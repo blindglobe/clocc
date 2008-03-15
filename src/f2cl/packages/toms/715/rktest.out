@@ -1,0 +1,114 @@
+1Test of K(X,ALPHA) vs Multiplication Theorem
+
+
+   2000 Random arguments were tested from the interval ( 0.00, 1.00)
+
+
+ K(X,ALPHA) was larger   665 times,
+                agreed   649 times, and
+           was smaller   686 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.1418E-014 =    2 ** -49.32
+    occurred for X =0.999094E+000, NU =0.545233E+000 and IZE = 1
+ The estimated loss of base   2 significant digits is   3.68
+
+
+ The root mean square relative error was    0.2248E-015 =    2 ** -51.98
+ The estimated loss of base   2 significant digits is   1.02
+
+
+1Test of K(X,ALPHA) vs Multiplication Theorem
+
+
+   2000 Random arguments were tested from the interval ( 1.00,10.00)
+
+
+ K(X,ALPHA) was larger   690 times,
+                agreed   665 times, and
+           was smaller   645 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.6525E-015 =    2 ** -50.44
+    occurred for X =0.391589E+001, NU =0.840314E+000 and IZE = 1
+ The estimated loss of base   2 significant digits is   2.56
+
+
+ The root mean square relative error was    0.1906E-015 =    2 ** -52.22
+ The estimated loss of base   2 significant digits is   0.78
+
+
+1Test of K(X,ALPHA) vs Multiplication Theorem
+
+
+   2000 Random arguments were tested from the interval (10.00,20.00)
+
+
+ K(X,ALPHA) was larger   677 times,
+                agreed   637 times, and
+           was smaller   686 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum absolute error of    0.7014E-015 =    2 ** -50.34
+    occurred for X =0.110705E+002, NU =0.964395E+000 and IZE = 1
+ The estimated loss of base   2 significant digits is   2.66
+
+
+ The root mean square absolute error was    0.2021E-015 =    2 ** -52.14
+ The estimated loss of base   2 significant digits is   0.86
+
+
+1Check of Error Returns
+
+
+ The following summarizes calls with indicated parameters
+
+ NCALC different from MB indicates some form of error
+
+ See documentation for RKBESL for details
+
+       ARG            ALPHA      MB   IZ       RES      NCALC
+
+
+-0.1000000E+001 0.5000000E+000    5    2 0.0000000E+000   -2
+
+
+ 0.1000000E+001 0.1500000E+001    5    2 0.0000000E+000   -2
+
+
+ 0.1000000E+001 0.5000000E+000   -5    2 0.0000000E+000   -7
+
+
+ 0.1000000E+001 0.5000000E+000    5    5 0.0000000E+000   -2
+
+
+ 0.2225074E-307 0.0000000E+000    2    2 0.7085124E+003    2
+
+
+ 0.1000000E-009 0.0000000E+000   20    2 0.2314178E+002   20
+
+
+ 0.1000000E-009 0.0000000E+000   20    2 0.2314178E+002   20
+
+
+ 0.6612588E+003 0.0000000E+000    2    1 0.3211860E-288    2
+
+
+ 0.7053427E+003 0.0000000E+000    2    1 0.0000000E+000   -2
+
+
+ 0.4503600E+017 0.0000000E+000    2    2 0.5905818E-008    2
+
+
+ 0.1797693E+309 0.0000000E+000    2    2 0.9347644E-154    2
+
+

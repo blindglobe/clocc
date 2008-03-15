@@ -1,0 +1,114 @@
+1Test of I1(X) vs Multiplication Theorem
+
+
+   2000 Random arguments were tested from the interval ( 0.00, 1.00)
+
+
+ I1(X) was larger   644 times,
+           agreed   679 times, and
+      was smaller   677 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.6505E-015 =    2 ** -50.45
+    occurred for X =0.336543E+000
+ The estimated loss of base   2 significant digits is   2.55
+
+
+ The root mean square relative error was    0.1856E-015 =    2 ** -52.26
+ The estimated loss of base   2 significant digits is   0.74
+
+
+1Test of I1(X) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval ( 1.00, 7.50)
+
+
+ I1(X) was larger   661 times,
+           agreed   609 times, and
+      was smaller   730 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.9040E-015 =    2 ** -49.97
+    occurred for X =0.602670E+001
+ The estimated loss of base   2 significant digits is   3.03
+
+
+ The root mean square relative error was    0.2118E-015 =    2 ** -52.07
+ The estimated loss of base   2 significant digits is   0.93
+
+
+1Test of I1(X) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval ( 7.50,15.00)
+
+
+ I1(X) was larger   862 times,
+           agreed   348 times, and
+      was smaller   790 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.1291E-014 =    2 ** -49.46
+    occurred for X =0.119268E+002
+ The estimated loss of base   2 significant digits is   3.54
+
+
+ The root mean square relative error was    0.3910E-015 =    2 ** -51.18
+ The estimated loss of base   2 significant digits is   1.82
+
+
+1Test of I1(X) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval (15.00,30.00)
+
+
+ I1(X) was larger   609 times,
+           agreed   795 times, and
+      was smaller   596 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.6947E-015 =    2 ** -50.35
+    occurred for X =0.150219E+002
+ The estimated loss of base   2 significant digits is   2.65
+
+
+ The root mean square relative error was    0.1605E-015 =    2 ** -52.47
+ The estimated loss of base   2 significant digits is   0.53
+
+
+1Special Tests
+
+
+ Test with extreme arguments
+
+ I1(XMIN) = 0.11125369292536007E-307
+
+ I1(0) = 0.00000000000000000E+000
+
+ I1(-.55568624803404972E-001 ) = -.27795038081849317E-001
+
+ I1(0.55568624803404972E-001 ) = 0.27795038081849317E-001
+
+ E**-X * I1(XMAX) = 0.29754474593158999E-154
+
+ Tests near the largest argument for unscaled functions
+
+ I1(0.69235162141875753E+003 ) = 0.73282458365806542E+299
+
+ I1(0.73629972238772166E+003 ) = 0.17900000000000000E+309
+
+ This concludes the tests.

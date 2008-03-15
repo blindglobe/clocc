@@ -1,0 +1,139 @@
+1Test of Y(X,ALPHA) vs Multiplication Theorem
+
+
+   1989 Random arguments were tested from the interval ( 0.00, 2.00)
+
+
+ Y(X,ALPHA) was larger   849 times,
+                agreed   422 times, and
+           was smaller   718 times.
+
+
+ NOTE: first  11 arguments in test interval skipped
+       because multiplication theorem did not converge
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.2737E-014 =    2 ** -48.38
+    occurred for X =0.192225E+001 and NU =0.550330E+000
+    with Y(X,ALPHA) = 0.162225E+000
+ The estimated loss of base   2 significant digits is   4.62
+
+
+ The root mean square relative error was    0.3628E-015 =    2 ** -51.29
+ The estimated loss of base   2 significant digits is   1.71
+
+
+1Test of Y(X,ALPHA) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval ( 2.00,10.00)
+
+
+ Y(X,ALPHA) was larger   737 times,
+                agreed   510 times, and
+           was smaller   753 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.5132E-014 =    2 ** -47.47
+    occurred for X =0.817212E+001 and NU =0.601568E+000
+    with Y(X,ALPHA) = 0.459705E-001
+ The estimated loss of base   2 significant digits is   5.53
+
+
+ The root mean square relative error was    0.3961E-015 =    2 ** -51.17
+ The estimated loss of base   2 significant digits is   1.83
+
+
+1Test of Y(X,ALPHA) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval (10.00,20.00)
+
+
+ Y(X,ALPHA) was larger   719 times,
+                agreed   578 times, and
+           was smaller   703 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.4767E-014 =    2 ** -47.58
+    occurred for X =0.159744E+002 and NU =0.845630E-001
+    with Y(X,ALPHA) = 0.122278E+000
+ The estimated loss of base   2 significant digits is   5.42
+
+
+ The root mean square relative error was    0.2540E-015 =    2 ** -51.81
+ The estimated loss of base   2 significant digits is   1.19
+
+
+1Test of Y(X,ALPHA) vs Taylor series
+
+
+   2000 Random arguments were tested from the interval (30.00,40.00)
+
+
+ Y(X,ALPHA) was larger   609 times,
+                agreed   746 times, and
+           was smaller   645 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.2664E-014 =    2 ** -48.42
+    occurred for X =0.353956E+002 and NU =0.246060E+000
+    with Y(X,ALPHA) = 0.442841E-001
+ The estimated loss of base   2 significant digits is   4.58
+
+
+ The root mean square relative error was    0.1926E-015 =    2 ** -52.21
+ The estimated loss of base   2 significant digits is   0.79
+
+
+1Check of Error Returns
+
+
+ The following summarizes calls with indicated parameters
+
+ NCALC different from MB indicates some form of error
+
+ See documentation for RYBESL for details
+
+       ARG            ALPHA      MB      B(1)      NCALC
+
+
+ 0.1000000E+001 0.1500000E+001    5 0.0000000E+000   -1
+
+
+ 0.1000000E+001 0.5000000E+000   -5 0.0000000E+000   -6
+
+
+ 0.2225074E-307 0.0000000E+000    2 0.0000000E+000   -1
+
+
+ 0.6675222E-307 0.0000000E+000    2-0.4503536E+003    2
+
+
+ 0.6675222E-307 0.1000000E+001    2-0.9537058E+307    1
+
+
+ Tests near the largest acceptable argument for RYBESL
+
+ RYBESL will be called with the arguments0.335544E+0080.500000E+000
+ NCALC returned the value    2
+ and RYBESL returned U(1) = 0.296749E-004
+
+ RYBESL will be called with the arguments0.536871E+0090.500000E+000
+ This should trigger an error message.
+ NCALC returned the value   -1
+ and RYBESL returned U(1) = 0.000000E+000
+
+ This concludes the tests.

@@ -1,0 +1,128 @@
+1Test of Y0(X) VS Multiplication Theorem
+
+
+   2000 random arguments were tested from the interval (  0.0,  3.0)
+
+
+ ABS(Y0(X)) was larger   817 times
+                agreed   591 times, and
+           was smaller   592 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.7624E-015 =    2 ** -50.22
+    occurred for X =0.279636E+001
+ The estimated loss of base   2 significant digits is   2.78
+
+
+ The root mean square relative error was    0.2105E-015 =    2 ** -52.08
+ The estimated loss of base   2 significant digits is   0.92
+
+
+1Test of Y0(X) VS Multiplication Theorem
+
+
+   2000 random arguments were tested from the interval (  3.0,  5.5)
+
+
+ ABS(Y0(X)) was larger   710 times
+                agreed   565 times, and
+           was smaller   725 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.8174E-015 =    2 ** -50.12
+    occurred for X =0.515246E+001
+ The estimated loss of base   2 significant digits is   2.88
+
+
+ The root mean square relative error was    0.2149E-015 =    2 ** -52.05
+ The estimated loss of base   2 significant digits is   0.95
+
+
+1Test of Y0(X) VS Multiplication Theorem
+
+
+   2000 random arguments were tested from the interval (  5.5,  8.0)
+
+
+ ABS(Y0(X)) was larger   926 times
+                agreed   265 times, and
+           was smaller   809 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum relative error of    0.2553E-014 =    2 ** -48.48
+    occurred for X =0.704441E+001
+ The estimated loss of base   2 significant digits is   4.52
+
+
+ The root mean square relative error was    0.5155E-015 =    2 ** -50.79
+ The estimated loss of base   2 significant digits is   2.21
+
+
+1Test of Y0(X) VS Multiplication Theorem
+
+
+    500 random arguments were tested from the interval (  8.0, 20.0)
+
+
+ ABS(Y0(X)) was larger   179 times
+                agreed   100 times, and
+           was smaller   221 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number.
+
+
+ The maximum absolute error of    0.7031E-015 =    2 ** -50.34
+    occurred for X =0.174751E+002
+ The estimated loss of base   2 significant digits is   2.66
+
+
+ The root mean square absolute error was    0.2376E-015 =    2 ** -51.90
+ The estimated loss of base   2 significant digits is   1.10
+
+
+1Special Tests
+
+
+ Accuracy near zeros
+
+          X               BESY0(X)             Loss of base  2 digits
+
+   0.8906250000E+000  -0.260031427229335E-002           0.59
+
+   0.3957031250E+001   0.260534549114568E-003           0.91
+
+   0.7085937500E+001  -0.340794487147956E-004           1.84
+
+
+
+ Test with extreme arguments
+
+ Y0 will be called with the argument 0.2225073859E-307
+ This should not stop execution.
+
+
+ Y0 returned the value-0.45105297100712858E+003
+
+ Y0 will be called with the argument 0.0000000000E+000
+ This may stop execution.
+
+
+ Y0 returned the value-0.17900000000000000E+309
+
+ Y0 will be called with the argument 0.1797693135E+309
+ This may stop execution.
+
+
+ Y0 returned the value 0.00000000000000000E+000
+
+ This concludes the tests.

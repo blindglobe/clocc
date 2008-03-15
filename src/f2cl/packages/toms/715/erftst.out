@@ -1,0 +1,200 @@
+1Test of erf(x) vs double series expansion
+
+
+   2000 Random arguments were tested from the interval (  0.000,  0.469)
+
+
+    ERF(X) was larger   366 times,
+               agreed  1298 times, and
+          was smaller   336 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.2427E-015 =    2 ** -51.87
+    occurred for X =0.430540E+000
+ The estimated loss of base   2 significant digits is   1.13
+
+
+ The root mean square relative error was    0.9126E-016 =    2 ** -53.28
+ The estimated loss of base   2 significant digits is   0.00
+
+
+
+
+
+ Test of erfc(x) vs exp(x+1/4) SUM i^n erfc(x+1/2)
+
+
+   2000 Random arguments were tested from the interval (  0.469,  2.000)
+
+
+   ERFC(X) was larger   589 times,
+               agreed   863 times, and
+          was smaller   548 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.6470E-015 =    2 ** -50.46
+    occurred for X =0.121483E+001
+ The estimated loss of base   2 significant digits is   2.54
+
+
+ The root mean square relative error was    0.1512E-015 =    2 ** -52.55
+ The estimated loss of base   2 significant digits is   0.45
+
+
+1Test of exp(x*x) erfc(x) vs SUM i^n erfc(x+1/2)
+
+
+   2000 Random arguments were tested from the interval (  0.469,  2.000)
+
+
+  ERFCX(X) was larger   823 times,
+               agreed   600 times, and
+          was smaller   577 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.8111E-015 =    2 ** -50.13
+    occurred for X =0.183891E+001
+ The estimated loss of base   2 significant digits is   2.87
+
+
+ The root mean square relative error was    0.2181E-015 =    2 ** -52.03
+ The estimated loss of base   2 significant digits is   0.97
+
+
+
+
+
+ Test of erfc(x) vs exp(x+1/4) SUM i^n erfc(x+1/2)
+
+
+   2000 Random arguments were tested from the interval (  2.000, 26.000)
+
+
+   ERFC(X) was larger   591 times,
+               agreed   848 times, and
+          was smaller   561 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.5368E-015 =    2 ** -50.73
+    occurred for X =0.564233E+001
+ The estimated loss of base   2 significant digits is   2.27
+
+
+ The root mean square relative error was    0.1517E-015 =    2 ** -52.55
+ The estimated loss of base   2 significant digits is   0.45
+
+
+1Test of exp(x*x) erfc(x) vs SUM i^n erfc(x+1/2)
+
+
+   2000 Random arguments were tested from the interval (  2.000, 20.000)
+
+
+  ERFCX(X) was larger   478 times,
+               agreed  1013 times, and
+          was smaller   509 times.
+
+
+ There are  53 base   2 significant digits in a floating-point number
+
+
+ The maximum relative error of    0.9042E-015 =    2 ** -49.97
+    occurred for X =0.290748E+001
+ The estimated loss of base   2 significant digits is   3.03
+
+
+ The root mean square relative error was    0.1412E-015 =    2 ** -52.65
+ The estimated loss of base   2 significant digits is   0.35
+
+
+1Special Tests
+
+
+       Estimated loss of base  2significant digits in
+
+   X     Erf(x)+Erf(-x)   Erf(x)+Erfc(x)-1   Erfcx(x)-exp(x*x)*erfc(x)
+
+  0.000            0.00            0.00            0.00
+ -0.500            0.00            0.00            0.03
+ -1.000            0.00            0.00            0.00
+ -1.500            0.00            0.00            0.00
+ -2.000            0.00            0.00            0.00
+ -2.500            0.00            0.00            0.00
+ -3.000            0.00            0.00            0.02
+ -3.500            0.00            0.00            0.33
+ -4.000            0.00            0.00            0.00
+ -4.500            0.00            0.00            0.00
+
+
+ Test of special arguments
+
+
+   ERF (0.179769E+309) = 0.100000E+001
+
+
+   ERF (0.000000E+000) = 0.000000E+000
+
+
+  ERFC (0.000000E+000) = 0.100000E+001
+
+
+  ERFC (-.179769E+309) = 0.200000E+001
+
+
+ Test of Error Returns
+
+
+
+ ERFC will be called with the argument0.199074E+002
+ This should not underflow
+
+
+ ERFC returned the value0.217879E-173
+
+
+
+ ERFC will be called with the argument0.265433E+002
+ This may underflow
+
+
+ ERFC returned the value0.222508E-307
+
+
+
+ ERFCX will be called with the argument0.237712E+308
+ This should not underflow
+
+
+ ERFCX returned the value0.237341E-307
+
+
+
+ ERFCX will be called with the argument-.239659E+002
+ This should not overflow
+
+
+ ERFCX returned the value0.554007E+250
+
+
+
+ ERFCX will be called with the argument-.266287E+002
+ This may overflow
+
+
+ ERFCX returned the value0.179000E+309
+
+
+
+ This concludes the tests

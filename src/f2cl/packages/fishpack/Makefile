@@ -58,7 +58,12 @@ FISHPACK_SRC = \
 	tris4.f \
 	trix.f
 
-all : tsthwscrt tsthwscyl tsthwsplr tsthwsssp tsthwscsp tsthstplr tsthstcyl tsthstssp tsthstcsp tstsepx4
+PROGS = tsthwscrt tsthwscyl tsthwsplr tsthwsssp tsthwscsp tsthstplr tsthstcyl tsthstssp tsthstcsp tstsepx4
+
+all : $(PROGS)
+
+tests : $(PROGS)
+	for f in $(PROGS); do $$f | tee $$f.out; done
 
 tsthwscrt : ex/tsthwscrt.o libfishpack.a
 	$(F77) -o $@ $^
@@ -98,3 +103,6 @@ tstsepx4 : ex/tstsepx4.o ex/cofx4.o libfishpack.a
 
 libfishpack.a : $(FISHPACK_SRC:.f=.o)
 	ar r $@ $^
+
+clean : 
+	$(RM) *.o libfishpack.a $(PROGS)

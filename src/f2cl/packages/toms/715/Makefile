@@ -94,3 +94,12 @@ y0test : y0test.o $(TOMS715)
 
 y1test : y1test.o $(TOMS715)
 	$(F77) -o $@ $^
+
+PROGS = algtst anrtst dawtst eitest erftst gamtst i0test i1test j0test j1test k0test k1test psitst ritest rjtest rktest rytest y0test y1test
+
+tests : $(PROGS)
+	for f in $^; do $$f | tee $$f.out; done
+
+clean : 
+	$(RM) -f *.o
+	$(RM) -f $(PROGS) 

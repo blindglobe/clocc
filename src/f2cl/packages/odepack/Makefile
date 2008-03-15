@@ -154,4 +154,8 @@ demo-lsodis : opkdemo9.o libodepack.a
 demo-lsodis.out : demo-lsodis
 	demo-lsodis | tee $@
 
-demo-output : demo-lsode.out demo-lsoda.out demo-lsodar.out demo-lsodpk.out demo-lsodkr.out demo-lsodi.out demo-lsoibt.out demo-lsodis.out
+tests : demo-lsode.out demo-lsoda.out demo-lsodar.out demo-lsodpk.out demo-lsodkr.out demo-lsodi.out demo-lsoibt.out demo-lsodis.out
+
+clean :
+	$(RM) *.o
+	$(RM) demo-lsode demo-lsoda demo-lsodar demo-lsodpk demo-lsodkr demo-lsodi demo-lsoibt demo-lsodis

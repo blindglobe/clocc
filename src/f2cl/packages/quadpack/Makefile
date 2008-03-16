@@ -55,5 +55,23 @@ test3 : test3.f libquadpack.a
 test4 : test4.f libquadpack.a
 	$(F77) -o $@ $^
 
+test5 : test5.f libquadpack.a
+	$(F77) -o $@ $^
+
+# This compiles, the but results seem wrong.
+test6 : test6.f libquadpack.a
+	$(F77) -o $@ $^
+
+# DQAGP gives the wrong answers.
+test7 : test7.f libquadpack.a
+	$(F77) -o $@ $^
+
+test9 : test9.f libquadpack.a
+	$(F77) -o $@ $^
+
+test12 : test12.f libquadpack.a
+	$(F77) -o $@ $^
+
+
 tests : $(PROGS)
 	for f in $@; do $$f | tee $$f.out; done

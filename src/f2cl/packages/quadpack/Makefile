@@ -41,7 +41,7 @@ QUADPACK_SRC = \
 libquadpack.a : $(QUADPACK_SRC:.f=.o)
 	ar r $@ $^
 
-PROGS = test1 test2
+PROGS = test1 test2 test3 test4 test5 test6 test7 test9 test12
 
 test1 : test1.f libquadpack.a
 	$(F77) -o $@ $^
@@ -74,4 +74,4 @@ test12 : test12.f libquadpack.a
 
 
 tests : $(PROGS)
-	for f in $@; do $$f | tee $$f.out; done
+	for f in $^; do $$f | tee $$f.out; done

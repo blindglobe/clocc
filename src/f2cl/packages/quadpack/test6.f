@@ -50,6 +50,8 @@ c
       
       subroutine qqng(alpha)
       integer limit, lenw
+      double precision pi
+      parameter (pi = 3.141592653589793d0)
       parameter (limit = 200, lenw = 4*limit)
       
       double precision alpha
@@ -67,7 +69,7 @@ c
       
       alfa = alpha
       
-      call dqng(f, 0d0, 1d0, 0d0, 1d-8, result, abserr, neval, ier)
+      call dqng(f, 0d0, pi, 0d0, 1d-8, result, abserr, neval, ier)
       print 9000, alpha, result, abserr, neval, ier, soln(alpha),
      $     abs(soln(alpha) - result)
       return
@@ -76,6 +78,8 @@ c
 
       subroutine qqags(alpha)
       integer limit, lenw
+      double precision pi
+      parameter (pi = 3.141592653589793d0)
       parameter (limit = 200, lenw = 4*limit)
       
       double precision alpha
@@ -93,7 +97,7 @@ c
       
       alfa = alpha
       
-      call dqags(f, 0d0, 1d0, 0d0, 1d-8, result, abserr, neval, ier,
+      call dqags(f, 0d0, pi, 0d0, 1d-8, result, abserr, neval, ier,
      $     limit, lenw, last, iwork, work)
       print 9000, alpha, result, abserr, neval, ier, soln(alpha),
      $     abs(soln(alpha) - result)
@@ -103,6 +107,8 @@ c
 
       subroutine qqag(alpha)
       integer limit, lenw
+      double precision pi
+      parameter (pi = 3.141592653589793d0)
       parameter (limit = 200, lenw = 4*limit)
       
       double precision alpha
@@ -120,7 +126,7 @@ c
       
       alfa = alpha
       
-      call dqag(f, 0d0, 1d0, 0d0, 1d-8, 6, result, abserr, neval, ier,
+      call dqag(f, 0d0, pi, 0d0, 1d-8, 6, result, abserr, neval, ier,
      $     limit, lenw, last, iwork, work)
       print 9000, alpha, result, abserr, neval, ier, soln(alpha),
      $     abs(soln(alpha) - result)

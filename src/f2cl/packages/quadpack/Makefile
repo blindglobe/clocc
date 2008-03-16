@@ -58,7 +58,6 @@ test4 : test4.f libquadpack.a
 test5 : test5.f libquadpack.a
 	$(F77) -o $@ $^
 
-# This compiles, the but results seem wrong.
 test6 : test6.f libquadpack.a
 	$(F77) -o $@ $^
 

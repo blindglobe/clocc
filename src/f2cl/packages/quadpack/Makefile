@@ -61,7 +61,6 @@ test5 : test5.f libquadpack.a
 test6 : test6.f libquadpack.a
 	$(F77) -o $@ $^
 
-# DQAGP gives the wrong answers.
 test7 : test7.f libquadpack.a
 	$(F77) -o $@ $^
 

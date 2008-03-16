@@ -64,6 +64,7 @@ c     Fortran translation (Heh!) of test7 in quadpack-tests.lisp.
       end
       
       subroutine qqagp(alpha)
+      implicit none
       integer limit, lenw
       parameter (limit = 200, lenw = 4*limit)
       
@@ -72,7 +73,7 @@ c     Fortran translation (Heh!) of test7 in quadpack-tests.lisp.
       common /param/alfa
 
       double precision points(3), alist(limit), blist(limit)
-      double precision rlist(limit), pts(3)
+      double precision rlist(limit), elist(limit), pts(3)
       integer level(limit)
       integer ndin(3), iord(limit)
       data points/0.3333333333333333d0,

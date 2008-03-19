@@ -70,6 +70,12 @@ test9 : test9.f libquadpack.a
 test12 : test12.f libquadpack.a
 	$(F77) -o $@ $^
 
+test14 : test14.f libquadpack.a
+	$(F77) -o $@ $^
+
+test15 : test15.f libquadpack.a
+	$(F77) -o $@ $^
+
 
 tests : $(PROGS)
 	for f in $^; do $$f | tee $$f.out; done

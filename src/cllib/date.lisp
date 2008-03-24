@@ -1,10 +1,10 @@
 ;;; Date-related structures
 ;;;
-;;; Copyright (C) 1997-2007 by Sam Steingold.
+;;; Copyright (C) 1997-2008 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.36 2007/09/21 16:49:39 sds Exp $
+;;; $Id: date.lisp,v 2.37 2008/03/24 21:35:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -273,6 +273,13 @@ DST is Daylight Saving Time indicator."
       (decode-universal-time dttm tz)
     (date-formatter format se mi ho da mo ye dd (if dst-p dst dst1) tz1)))
 
+(defun date2string (ye mo da) (format nil "~d-~2,'0d-~2,'0d" ye mo da))
+(defun time2string (ho mi se)
+  (if (integerp se)
+      (format nil "~2,'0d:~2,'0d:~2,'0d" ho mi se)
+      (multiple-value-bind (s u) (floor se) ; assume se>0
+        (format nil "~2,'0d:~2,'0d:~2,'0d~4f" ho mi s u))))
+
 (defgeneric date-formatter (format se mi ho da mo ye dd dst tz)
   (:documentation "Format the decoded time using the given format spec.
 The supported specs are:
@@ -293,26 +300,25 @@ The supported specs are:
            (date-formatter :short se mi ho da mo ye dd dst tz)))
   (:method ((format (eql :date)) se mi ho da mo ye dd dst tz)
     (declare (ignore se mi ho dd dst tz))
-    (format nil "~d-~2,'0d-~2,'0d" ye mo da))
+    (date2string ye mo da))
   (:method ((format (eql :datetime)) se mi ho da mo ye dd dst tz)
     (declare (ignore dd))
-    (format nil "~d-~2,'0d-~2,'0dT~2,'0d:~2,'0d:~2,'0d~@[Z~a~]"
-            ye mo da ho mi se (and (/= 0 tz) (tz->string tz dst nil))))
+    (format nil "~aT~a~@[Z~a~]" (date2string ye mo da) (time2string ho mi se)
+            (and (/= 0 tz) (tz->string tz dst nil))))
   (:method ((format (eql :short)) se mi ho da mo ye dd dst tz)
-    (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d~@[ ~a~]"
-            ye mo da (aref +week-days+ dd) ho mi se
-            (and (/= 0 tz) (tz->string tz dst))))
+    (format nil "~a ~a ~a~@[ ~a~]" (date2string ye mo da) (aref +week-days+ dd)
+            (time2string ho mi se) (and (/= 0 tz) (tz->string tz dst))))
   (:method ((format (eql :long)) se mi ho da mo ye dd dst tz)
-    (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~a"
-            ye mo da (aref +week-days+ dd) ho mi se (tz->string tz dst)))
+    (format nil "~a ~a ~a ~a" (date2string ye mo da) (aref +week-days+ dd)
+            (time2string ho mi se) (tz->string tz dst)))
   (:method ((format (eql :mbox)) se mi ho da mo ye dd dst tz)
-    (format nil "~a ~a ~d ~2,'0d:~2,'0d:~2,'0d ~d~@[ ~a~]"
+    (format nil "~a ~a ~d ~a ~d~@[ ~a~]"
             (aref +week-days+ dd) (aref +month-names+ (1- mo))
-            da ho mi se ye (and (/= 0 tz) (tz->string tz dst))))
+            da (time2string ho mi se) ye (and (/= 0 tz) (tz->string tz dst))))
   (:method ((format (eql :usa)) se mi ho da mo ye dd dst tz)
-    (format nil "~a, ~d ~a ~d ~2,'0d:~2,'0d:~2,'0d ~a"
+    (format nil "~a, ~d ~a ~d ~a ~a"
             (aref +week-days+ dd) da (aref +month-names+ (1- mo))
-            ye ho mi se (tz->string tz dst))))
+            ye (time2string ho mi se) (tz->string tz dst))))
 
 (defcustom *y2k-cut* (mod 100) 50
   "*The first year which goes to the 21st century in `fix-y2k'.")

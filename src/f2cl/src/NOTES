@@ -41,6 +41,16 @@ o Support the following types of implied-do loops in DATA statements.
   These changes allow us to compile hs109.f and tp383mod.f
   successfully.  The tests pass too.
 
+o The test programs in the various add-on packages now save their
+  outputs.  The outputs have been generated using Sun Studio 11
+  Fortran on an UltraSparc.  This makes it a little easier to compare
+  against the Lisp output since both Sun Fortran and f2cl use a D
+  exponent marker in most of the same places.
+o Added Fortran tests for quadpack, just so we can compare them with
+  the tests for the translated version.
+o Lazily initialize *lun-hash* hash-table entries for units 5, 6, and
+  t.  Works around an issue found in maxima with clisp.  The
+  hash-table contained closed streams for some reason.
 
 Feb 2007
 ------------
@@ -64,7 +74,6 @@ o Many of the included packages have been rerun with these changes:
     + mainf
   - odepack
     + lsode, lsoda, lsodpk
-
 Sep 2007
 ------------
 o Extended DO loops were causing extra labels in the Lisp code, which
@@ -1294,7 +1303,10 @@ Bugs:
   if the value of a PARAMETER variable is computed from the value(s)
   of other PARAMETER variables.
 
-* Certain DO loops with branches are not translated correctly.  For
+
+* FIXED
+
+  Certain DO loops with branches are not translated correctly.  For
   example:
 
       do 10 k = 1, 2

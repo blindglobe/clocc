@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.101 2008/03/08 12:49:08 rtoy Exp $")
+  "$Id: macros.l,v 1.102 2008/03/26 13:19:52 rtoy Rel $")
 
 ;; macros:
 ;;	rexpt
@@ -1025,19 +1025,11 @@ is not included")
 
 #-gcl
 (defparameter *lun-hash*
-  (let ((table (make-hash-table)))
-    (setf (gethash 6 table) *standard-output*)
-    (setf (gethash 5 table) *standard-input*)
-    (setf (gethash t table) *standard-output*)
-    table))
+  (make-hash-table))
 
 #+gcl
 (defvar *lun-hash*
-  (let ((table (make-hash-table)))
-    (setf (gethash 6 table) *standard-output*)
-    (setf (gethash 5 table) *standard-input*)
-    (setf (gethash t table) *standard-output*)
-    table))
+  (make-hash-table))
 
 #+nil
 (defun lun->stream (lun)
@@ -1053,7 +1045,15 @@ is not included")
   (let ((stream (gethash lun *lun-hash*)))
     (if stream
 	stream
-	(cond ((integerp lun)
+	(cond ((eql lun 5)
+	       ;; Always standard input
+	       (setf (gethash lun *lun-hash*) *standard-input*))
+	      ((or (eql lun 6)
+		   (eql lun t))
+	       ;; Always standard output
+	       (setf (gethash lun *lun-hash*) *standard-output*))
+	      ((integerp lun)
+	       ;; All other cases open a file fort<n>.dat
 	       (setf (gethash lun *lun-hash*)
 		     (open (format nil "fort~d.dat" lun)
 			   :direction :io
@@ -1062,8 +1062,7 @@ is not included")
 	       (setf (gethash lun *lun-hash*)
 		     (if readp
 			 (make-string-input-stream lun)
-			 (make-string-output-stream))))
-	      ))))
+			 (make-string-output-stream))))))))
 
 (defun init-fortran-io ()
   "Initialize the F2CL Fortran I/O subsystem to sensible defaults"
@@ -1577,8 +1576,16 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.101 2008/03/08 12:49:08 rtoy Exp $
+;;; $Id: macros.l,v 1.102 2008/03/26 13:19:52 rtoy Rel $
 ;;; $Log: macros.l,v $
+;;; Revision 1.102  2008/03/26 13:19:52  rtoy
+;;; Lazily initialize the lun-hash table.  *lun-hash* starts as an empty
+;;; hash-table, and lun->stream will initialize units 5, 6, and t as
+;;; needed.
+;;;
+;;; Based on similar change in maxima to work around an issue with clisp
+;;; where the predefined entries had closed streams.
+;;;
 ;;; Revision 1.101  2008/03/08 12:49:08  rtoy
 ;;; Make :list-directed output be more like Fortran.  There is quite a bit
 ;;; of variation between, say, g77 and Sun Fortran, so we pick something

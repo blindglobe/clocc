@@ -275,7 +275,7 @@
         (cl:let ((var (first binding)))
           (if (typed-var-p var)
             (progn
-              (push (cons (typed-var-variable var) (rest bindings)) pure-bindings)
+              (push (cons (typed-var-variable var) (rest binding)) pure-bindings)
               (push `(type ,(typed-var-type var) ,(typed-var-variable var)) declspecs))
             (push binding pure-bindings)))))
     (values (nreverse pure-bindings) (nreverse declspecs))))

@@ -1,10 +1,10 @@
 ;;; url - handle url's and parse HTTP
 ;;;
-;;; Copyright (C) 1998-2007 by Sam Steingold.
+;;; Copyright (C) 1998-2008 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.61 2007/09/21 16:49:37 sds Exp $
+;;; $Id: url.lisp,v 2.62 2008/05/07 14:27:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -107,11 +107,11 @@ See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
 
 (defstruct (proxy (:type list)) user-pass host port)
 (defcustom *http-proxy* list nil
-  "*A list of 3 elements (user:password host port), parsed from $HTTP_PROXY
-proxy-user:proxy-password@proxy-host:proxy-port
+  "*A list of 3 elements (user:password host port), parsed from $http_proxy
+\[http://]proxy-user:proxy-password@proxy-host:proxy-port[/]
 by `http-proxy'.")
 
-(defun http-proxy (&optional (proxy-string (getenv "HTTP_PROXY") proxy-p))
+(defun http-proxy (&optional (proxy-string (getenv "http_proxy") proxy-p))
   "When the argument is supplied or `*http-proxy*' is NIL, parse the argument,
 set `*http-proxy*', and return it; otherwise just return `*http-proxy*'."
   (when (or proxy-p (and (null *http-proxy*) proxy-string))
@@ -121,12 +121,15 @@ set `*http-proxy*', and return it; otherwise just return `*http-proxy*'."
                                                #2=#.(length #1#)))
                       #2# 0))
            (at (position #\@ proxy-string :start start))
-           (colon (position #\: proxy-string :start (or at start))))
+           (colon (position #\: proxy-string :start (or at start)))
+           (slash (position #\/ proxy-string :start (or colon at start))))
       (setq *http-proxy*
             (make-proxy :user-pass (and at (subseq proxy-string start at))
-                        :host (subseq proxy-string (if at (1+ at) start) colon)
+                        :host (subseq proxy-string (if at (1+ at) start)
+                                      (or colon slash))
                         :port (if colon
-                                  (parse-integer proxy-string :start (1+ colon))
+                                  (parse-integer proxy-string :start (1+ colon)
+                                                 :end slash)
                                   (protocol-port "http"))))
       (mesg :log *url-output* "~&;; ~S=~S~%" '*http-proxy* *http-proxy*)))
   *http-proxy*)

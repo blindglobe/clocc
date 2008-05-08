@@ -1,10 +1,10 @@
 ;;; Read from/Write to files
 ;;;
-;;; Copyright (C) 1997-2007 by Sam Steingold
+;;; Copyright (C) 1997-2008 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.45 2007/09/21 16:49:39 sds Exp $
+;;; $Id: fileio.lisp,v 1.46 2008/05/08 21:01:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -22,9 +22,9 @@
 
 (export '(file-size-t file-size dir-size rename-files save-restore
           count-sexps code-complexity load-compile-maybe file-equal-p
-          file-newer file-newest file-header-alist
-          write-list-to-stream write-list-to-file file-cmp
-          read-list-from-stream read-list-from-file skip-search-or
+          file-newer file-newest file-header-alist skip-search-or
+          write-list-to-stream write-list-to-file write-lines-to-file file-cmp
+          read-list-from-stream read-list-from-file read-lines-from-file
           pr write-to-file read-from-file read-from-stream append-to-file
           read-trim skip-to-line skip-search skip-blanks read-non-blanks))
 
@@ -159,6 +159,10 @@ Returns the number of records and the file size."
         (format t "done [~:d record~:p] [~:d byte~:p]" len size)
         (values len size)))))
 
+(defun write-lines-to-file (lines file)
+  "Write the list of strings into the file."
+  (write-list-to-file lines file #'write-string))
+
 (defun read-list-from-stream (stream read-function &key args (package +kwd+)
                               (read-ahead-function #'read)
                               (eof +eof+) (readtable *readtable*))
@@ -205,6 +209,11 @@ defaults to `read' and is called with 3 arguments - STREAM, NIL and EOF.
           (apply #'read-list-from-stream stin read-function args))
       (format t "done [~:d record~:p]" len)
       (values lst len last))))
+
+(defun read-lines-from-file (fin)
+  "Read lines from file, returning a list of strings."
+  (read-list-from-file fin (lambda (in ra) (values ra (read-line in nil +eof+)))
+                       :read-ahead-function #'read-line))
 
 ;;;
 ;;; }}}{{{ Read/Write object

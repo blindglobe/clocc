@@ -1,10 +1,10 @@
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
-;;; Copyright (C) 1997-2007 by Sam Steingold.
+;;; Copyright (C) 1997-2008 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.88 2007/09/21 16:49:38 sds Exp $
+;;; $Id: math.lisp,v 2.89 2008/05/08 21:07:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -29,7 +29,7 @@
    make-primes-list number-sum-split all-num-split
    vector-shuffle permutation with-permutations-shuffle
    with-permutations-swap with-permutations-lex permutations-list subsets
-   draw pick sample eval-cont-fract fract-approx
+   draw pick sample sample-lines eval-cont-fract fract-approx
    *num-tolerance* *relative-tolerance* *absolute-tolerance*
    dot poly1 poly norm-functions norm normalize rel-dist
    erf erfc erfcx cndf cndf-tail
@@ -490,6 +490,15 @@ When :COMPLEMENT is non-NIL, the second value is the complement of the sample."
                (decf left))
          seq)
     (values (nreverse good) (nreverse drop))))
+
+(defun sample-lines (count &key (in (port:required-argument))
+                     (out (format nil "~A.~D" (namestring in) count)))
+  "Extract COUNT lines from file IN and write them into file OUT."
+  (multiple-value-bind (lines length) (read-lines-from-file in)
+    (unless (<= count length)
+      (error "~S(~:D,~S,~S): too few input lines (~:D)"
+             'sample-lines count in out length))
+    (write-lines-to-file (sample lines count) out)))
 
 ;;;
 ;;; Ratios

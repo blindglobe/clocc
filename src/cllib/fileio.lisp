@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.46 2008/05/08 21:01:58 sds Exp $
+;;; $Id: fileio.lisp,v 1.47 2008/05/27 18:56:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -320,6 +320,11 @@ Passes REPEAT (default NIL) keyword argument to `read-from-stream'."
        ((zerop (length st)) res)
     (declare (simple-string st res))))
 
+(defun skip-done (out line pos st)
+  (if pos                       ; no ~% because of with-timing
+      (mesg :head out "found(~:D:~:D): ~S" line pos st)
+      (mesg :head out "not found")))
+
 (declaim (ftype (function (stream simple-string &key (out t) (start index-t))
                           (values (or null simple-string)))
                 skip-to-line skip-search))
@@ -328,31 +333,39 @@ Passes REPEAT (default NIL) keyword argument to `read-from-stream'."
 :START specifies the column from which the comparison starts.
 :OUT specifies where the message should go. By default nothing is printed."
   (declare (stream st) (simple-string ln))
-  (mesg :head out " +++ `skip-to-line' --> `~a'~%" ln)
-  (do ((end (+ start (length ln))) (rr (read-line st) (read-line st)))
-      ((and (>= (length rr) end) (string-equal ln rr :start2 start :end2 end))
-       (subseq rr end))
-    (declare (type index-t end) (simple-string rr))))
+  (with-timing (:out out :type :head)
+    (mesg :head out " +++ ~S(~S)..." 'skip-to-line ln)
+    (do ((end (+ start (length ln))) (rr (read-line st) (read-line st))
+         (line 0 (1+ line)))
+        ((and (>= (length rr) end) (string-equal ln rr :start2 start :end2 end))
+         (skip-done out line 0 st)
+         (subseq rr end line))
+      (declare (type index-t end) (simple-string rr)))))
 
 (defun skip-search (stream string &key out (start 0))
-  "Read from STREAM until STRING is found by `search.'"
+  "Read from STREAM until STRING is found by SEARCH."
   (declare (stream stream) (simple-string string))
-  (mesg :head out " +++ `skip-search' --> `~a'~%" string)
-  (do ((st (read-line stream nil nil) (read-line stream nil nil)) pos)
-      ((or (null st)
-           (setq pos (search string st :start2 start :test #'char-equal)))
-       (values st pos))
-    (declare (type (or null simple-string) st))))
+  (with-timing (:out out :type :head)
+    (mesg :head out " +++ ~S(~S)..." 'skip-search string)
+    (do ((st (read-line stream nil nil) (read-line stream nil nil)) pos
+         (line 0 (1+ line)))
+        ((or (null st)
+             (setq pos (search string st :start2 start :test #'char-equal)))
+         (skip-done out line pos st)
+         (values st pos line))
+      (declare (type (or null simple-string) st)))))
 
 (defun skip-search-or (stream strings &optional out)
-  "Read from STREAM until one of STRINGS is found by `search.'"
+  "Read from STREAM until one of STRINGS is found by SEARCH."
   (declare (stream stream) (type list strings))
-  (mesg :head out " +++ `skip-search-or' --> ~a~%" strings)
-  (loop :for st = (read-line stream nil nil) :while st :do
-    (dolist (string strings)
-      (let ((pos (search string st :test #'char-equal)))
-        (when pos
-          (return-from skip-search-or (values st string pos)))))))
+  (with-timing (:out out :type :head)
+    (mesg :head out " +++ ~S~S..." 'skip-search-or strings)
+    (loop :for st = (read-line stream nil nil) :for line :upfrom 0 :while st :do
+      (dolist (string strings)
+        (let ((pos (search string st :test #'char-equal)))
+          (when pos
+            (skip-done out line pos st)
+            (return-from skip-search-or (values st string pos line))))))))
 
 ;;;
 ;;; }}}{{{ `save-restore'

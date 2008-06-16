@@ -1,10 +1,10 @@
 ;;; Read from/Write to files
 ;;;
 ;;; Copyright (C) 1997-2008 by Sam Steingold
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.47 2008/05/27 18:56:59 sds Exp $
+;;; $Id: fileio.lisp,v 1.48 2008/06/16 16:02:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

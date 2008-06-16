@@ -1,11 +1,11 @@
 ;;; n-dim statistics, histograms &c
 ;;; for simple regression, see math.lisp
 ;;;
-;;; Copyright (C) 2000-2007 by Sam Steingold
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; Copyright (C) 2000-2008 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.21 2007/09/21 16:49:38 sds Exp $
+;;; $Id: stat.lisp,v 1.22 2008/06/16 16:02:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

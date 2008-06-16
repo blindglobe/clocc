@@ -1,10 +1,10 @@
 ;;; Gnuplot (http://www.gnuplot.info/) interface
 ;;;
-;;; Copyright (C) 1997-2008 by Sam Steingold.
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; Copyright (C) 1997-2008 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.45 2008/01/30 20:06:49 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.46 2008/06/16 16:02:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM

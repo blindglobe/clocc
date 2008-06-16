@@ -2,11 +2,11 @@
 ;;; http://www.ocaml.info/home/ocaml_sources.html#toc8
 ;;; http://www.janestcapital.com/ocaml/index.html
 ;;;
-;;; Copyright (C) 2006, 2007 by Sam Steingold
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; Copyright (C) 2006-2008 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: ocaml.lisp,v 2.7 2007/09/21 16:49:38 sds Exp $
+;;; $Id: ocaml.lisp,v 2.8 2008/06/16 16:02:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/ocaml.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

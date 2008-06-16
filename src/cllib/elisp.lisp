@@ -1,10 +1,10 @@
 ;;; Load Emacs-Lisp files into Common Lisp
 ;;;
-;;; Copyright (C) 1999-2004, 2007 by Sam Steingold
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; Copyright (C) 1999-2004, 2007-2008 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.14 2007/09/21 16:49:39 sds Exp $
+;;; $Id: elisp.lisp,v 2.15 2008/06/16 16:02:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

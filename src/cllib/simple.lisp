@@ -1,10 +1,10 @@
 ;;; simple operations
 ;;;
-;;; Copyright (C) 2000-2004, 2007 by Sam Steingold
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; Copyright (C) 2000-2004, 2007-2008 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.16 2007/09/21 16:49:38 sds Exp $
+;;; $Id: simple.lisp,v 1.17 2008/06/16 16:02:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -188,13 +188,23 @@ The second value is the last atom (i.e., `dotted-p')."
                   &aux (ht (or append (make-hash-table :test test))))
   "Return the hash table with counts for values of the sequence."
   (unless weight (setq weight 1))
-  (map nil (etypecase weight
-             (function
-              (lambda (el)
-               (incf (gethash (funcall key el) ht 0) (funcall weight el))))
-             (number
-              (lambda (el) (incf (gethash (funcall key el) ht 0) weight))))
-       seq)
+  (etypecase seq
+    (sequence
+     (map nil (etypecase weight
+                (function
+                 (lambda (el)
+                  (incf (gethash (funcall key el) ht 0) (funcall weight el))))
+                (number
+                 (lambda (el) (incf (gethash (funcall key el) ht 0) weight))))
+          seq))
+    (hash-table
+     (maphash (etypecase weight
+                (function
+                 (lambda (k v)
+                  (incf (gethash (funcall key k v) ht 0) (funcall weight k v))))
+                (number
+                 (lambda (k v) (incf (gethash (funcall key k v) ht 0) weight))))
+              seq)))
   ht)
 
 (defun find-duplicates (seq &key (test 'eql) (key #'value))

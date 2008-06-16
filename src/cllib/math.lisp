@@ -1,10 +1,10 @@
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
-;;; Copyright (C) 1997-2008 by Sam Steingold.
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; Copyright (C) 1997-2008 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.89 2008/05/08 21:07:27 sds Exp $
+;;; $Id: math.lisp,v 2.90 2008/06/16 16:02:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

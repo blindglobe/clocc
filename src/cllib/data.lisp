@@ -1,10 +1,10 @@
 ;;; Data Analysis and Visualization
 ;;;
-;;; Copyright (C) 2006, 2007 by Sam Steingold
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; Copyright (C) 2006-2008 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.49 2007/09/21 16:49:39 sds Exp $
+;;; $Id: data.lisp,v 1.50 2008/06/16 16:02:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

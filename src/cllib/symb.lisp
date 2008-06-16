@@ -1,10 +1,10 @@
 ;;; Symbols & Keywords
 ;;;
-;;; Copyright (C) 1997-2005, 2007 by Sam Steingold
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; Copyright (C) 1997-2005, 2007-2008 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: symb.lisp,v 1.12 2007/09/21 16:49:38 sds Exp $
+;;; $Id: symb.lisp,v 1.13 2008/06/16 16:02:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/symb.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

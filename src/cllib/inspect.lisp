@@ -1,10 +1,10 @@
 ;;; Inspect
 ;;;
 ;;; Copyright (C) 2000-2008 by Sam Steingold
-;;; This is Free Software, covered by the GNU GPL (v2)
+;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.39 2008/06/04 22:34:55 sds Exp $
+;;; $Id: inspect.lisp,v 1.40 2008/06/16 16:02:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

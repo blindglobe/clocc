@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.71 2008/08/04 18:04:54 sds Exp $
+;;; $Id: sys.lisp,v 1.72 2008/08/04 18:10:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -247,8 +247,11 @@ initargs for all slots are returned, otherwise only the slots with
   "Return the structure keyword constructor name."
   #+clisp (ext:structure-keyword-constructor struct)
   #-clisp                       ; LAME!!!
-  (intern (concatenate 'string "MAKE-" (symbol-name struct))
-          (symbol-package struct)))
+  (let ((s (concatenate 'string "MAKE-" (symbol-name struct)))
+        (p (symbol-package struct)))
+    (or (find-symbol s p)
+        (error "~S(~S): no symbol ~S in ~S"
+	       'structure-keyword-constructor struct s p))))
 
 (defun structure-boa-constructors (struct)
   "Return the list of structure BOA constructor names."
@@ -260,15 +263,22 @@ initargs for all slots are returned, otherwise only the slots with
   "Return the structure copier name."
   #+clisp (ext:structure-copier struct)
   #-clisp                       ; LAME!!!
-  (intern (concatenate 'string "COPY-" (symbol-name struct))
-          (symbol-package struct)))
+  (let ((s (concatenate 'string "COPY-" (symbol-name struct)))
+        (p (symbol-package struct)))
+    (or (find-symbol s p)
+        (error "~S(~S): no symbol ~S in ~S"
+               'structure-copier struct s p))))
 
 (defun structure-predicate (struct)
   "Return the structure predicate name."
   #+clisp (ext:structure-predicate struct)
   #-clisp                       ; LAME!!!
-  (intern (concatenate 'string (symbol-name struct) "-P")
-          (symbol-package struct)))
+  (let ((s (concatenate 'string (symbol-name struct) "-P"))
+        (p (symbol-package struct)))
+   (or (find-symbol s p)
+       (error "~S(~S): no symbol ~S in ~S"
+              'structure-predicate struct s p))))
+
 
 ) ; macrolet
 

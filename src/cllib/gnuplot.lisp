@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.47 2008/08/04 18:57:06 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.48 2008/08/04 20:01:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -389,7 +389,8 @@ according to the given backend")
     *gnuplot-stream*))
 
 (defun internal-with-plot-stream (body-function &rest opts
-                                  &key (plot *gnuplot-default-directive*)
+                                  &key title
+                                  (plot *gnuplot-default-directive*)
                                   (dribble *gnuplot-dribble*)
                                   (backend *plot-default-backend*)
                                   &allow-other-keys)
@@ -420,22 +421,23 @@ Should not be called directly but only through `with-plot-stream'."
         (force-output plot-stream))
       (when (streamp plot)
         (mesg :plot *gnuplot-msg-stream*
-              "~&wrote plot commands to ~s~%" plot))
+              "~&wrote the~@[ ~S~] plot commands to ~s~%" title plot))
       (ecase plot
-        ((t :plot) (mesg :plot *gnuplot-msg-stream* "~&Done plotting.~%"))
+        ((t :plot) (mesg :plot *gnuplot-msg-stream*
+                         "~&Done plotting~@[ ~S~].~%" title))
         (:return nil)
         (:wait
-         (fresh-line *terminal-io*)
-         (princ "Press <enter> to continue..." *terminal-io*)
+         (format *terminal-io*
+                 "~&~@[Finished ~S~%~]Press <enter> to continue..." title)
          (force-output *terminal-io*) (read-line *terminal-io* nil nil))
         (:print (mesg :plot *gnuplot-msg-stream*
-                      "~&Sent the plot to `~a'.~%" *gnuplot-printer*)
+                      "~&Sent the~@[ ~S~] plot to `~a'.~%"
+                      title *gnuplot-printer*)
                 (format plot-stream "set output~%"))
         (:file
          (close plot-stream)
-         (mesg :plot *gnuplot-msg-stream*
-               "~&Wrote `~a'.~%Type \"load '~a'\" at the gnuplot prompt.~%"
-               plot-file plot-file))))))
+         (mesg :plot *gnuplot-msg-stream* "~&Wrote `~a'~@[ for ~S~].~%Type \"load '~a'\" at the gnuplot prompt.~%"
+               plot-file title plot-file))))))
 
 (defun plot-data-style (num-ls)
   "Decide upon the appropriate data style for the number of points."

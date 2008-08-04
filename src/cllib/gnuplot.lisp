@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.46 2008/06/16 16:02:33 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.47 2008/08/04 18:57:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -77,7 +77,7 @@ in addition to *GNUPLOT-STREAM* or NIL for no dribbling.")
   "Execute body, with STR bound to the gnuplot stream.
 Usage: (with-plot-stream (stream :plot PLOT &rest OPTIONS) body).
 OPTIONS are gnuplot(1) options, the following are accepted:
- XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XB XE GRID TERM
+ XLABEL YLABEL XTIMEFMT YTIMEFMT DATA-STYLE TITLE XB XE GRID TERM
  BORDER LEGEND MULTIPLOT (key in gnuplot)
 PLOT means:
   :plot    => plot;
@@ -339,11 +339,11 @@ according to the given backend")
 (defun make-plot (&key data-fun (plot *gnuplot-default-directive*)
                   (xlabel "x") (ylabel "y") arrows multiplot
                   (timestamp +plot-timestamp+) labels
-                  (data-style :lines) (border t) timefmt
+                  (data-style :lines) (border t) xtimefmt ytimefmt
                   (xb '*) (xe '*) (yb '*) (ye '*) legend
                   (title (if multiplot "multiplot" "plot"))
                   (xtics t) (ytics t) (grid t) xlogscale ylogscale
-                  (xfmt (or timefmt "%g")) (yfmt "%g")
+                  (xfmt (or xtimefmt "%g")) (yfmt (or ytimefmt "%g"))
                   (ts (cond ((plot-timestamp-p timestamp) timestamp)
                             ((or (eq timestamp t) (eq timestamp :default))
                              +plot-timestamp+)
@@ -355,10 +355,10 @@ according to the given backend")
    :data-fun data-fun :term (directive-term plot) :data-style data-style
    :x-axis (make-plot-axis :name "x" :label xlabel :tics xtics :fmt xfmt
                            :range (cons xb xe)
-                           :logscale xlogscale :time-p (not (null timefmt)))
+                           :logscale xlogscale :time-p (not (null xtimefmt)))
    :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt
                            :range (cons yb ye)
-                           :logscale ylogscale)
+                           :logscale ylogscale :time-p (not (null ytimefmt)))
    :multiplot multiplot :timestamp (and (null multiplot) ts)
    :labels (if multiplot
                (delete nil
@@ -449,7 +449,7 @@ Should not be called directly but only through `with-plot-stream'."
 (defun plot-dated-lists (begd endd dls &rest opts &key (title "Dated Plot")
                          (xlabel "time") rel data-style
                          (ylabel (if rel "relative value" "value"))
-                         (timefmt "%Y-%m-%d") ema (slot 'val)
+                         (xtimefmt "%Y-%m-%d") ema (slot 'val)
                          &allow-other-keys)
   "Plot the dated lists from BEGD to ENDD.
 Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
@@ -461,7 +461,7 @@ EMA is the list of parameters for Exponential Moving Averages."
   (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
                      :data-style (or data-style (plot-data-style
                                                  (days-between begd endd)))
-                     :timefmt timefmt :xb begd :xe endd
+                     :xtimefmt xtimefmt :xb begd :xe endd
                      (remove-plist opts :ema :rel :slot))
     (format str "plot~{ '-' using 1:2 title ~s~^,~}"
             ;; Ugly.  But gnuplot requires a comma *between* plots,

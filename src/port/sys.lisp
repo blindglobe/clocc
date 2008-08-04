@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.70 2008/05/18 04:03:13 sds Exp $
+;;; $Id: sys.lisp,v 1.71 2008/08/04 18:04:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -247,7 +247,7 @@ initargs for all slots are returned, otherwise only the slots with
   "Return the structure keyword constructor name."
   #+clisp (ext:structure-keyword-constructor struct)
   #-clisp                       ; LAME!!!
-  (intern (concatenate 'string "MAKE-" (symbol-string struct))
+  (intern (concatenate 'string "MAKE-" (symbol-name struct))
           (symbol-package struct)))
 
 (defun structure-boa-constructors (struct)
@@ -260,14 +260,14 @@ initargs for all slots are returned, otherwise only the slots with
   "Return the structure copier name."
   #+clisp (ext:structure-copier struct)
   #-clisp                       ; LAME!!!
-  (intern (concatenate 'string "COPY-" (symbol-string struct))
+  (intern (concatenate 'string "COPY-" (symbol-name struct))
           (symbol-package struct)))
 
 (defun structure-predicate (struct)
   "Return the structure predicate name."
   #+clisp (ext:structure-predicate struct)
   #-clisp                       ; LAME!!!
-  (intern (concatenate 'string (symbol-string struct) "-P")
+  (intern (concatenate 'string (symbol-name struct) "-P")
           (symbol-package struct)))
 
 ) ; macrolet

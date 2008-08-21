@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.102 2008/03/26 13:19:52 rtoy Rel $")
+  "$Id: macros.l,v 1.103 2008/08/21 20:16:49 rtoy Exp $")
 
 ;; macros:
 ;;	rexpt
@@ -1254,10 +1254,18 @@ causing all pending operations to be flushed"
   (declare (ignore colon-p at-p args))
   (etypecase arg
     (complex
+     #-gcl
      (format stream "(~/f2cl-lib::fortran-format-g/, ~/f2cl-lib::fortran-format-g/)"
-	     (realpart arg) (imagpart arg)))
+	     (realpart arg) (imagpart arg))
+     #+gcl
+     (progn
+       (fortran-format-g stream (realpart arg) nil nil)
+       (fortran-format-g stream (imagpart arg) nil nil)))
     (float
-     (format stream "  ~/f2cl-lib::fortran-format-g/" arg))
+     #-gcl
+     (format stream "  ~/f2cl-lib::fortran-format-g/" arg)
+     #+gcl
+     (fortran-format-g stream arg nil nil))
     (integer
      (format stream "  ~D" arg))
     (string
@@ -1283,15 +1291,32 @@ causing all pending operations to be flushed"
 		    (push (list v) pars))
 		   (cons
 		    (dolist (item v)
-		      (push "~/f2cl-lib::fortran-format/" pars)
-		      (push (list item) pars)))
+		      #-gcl
+		      (progn
+			(push "~/f2cl-lib::fortran-format/" pars)
+			(push (list item) pars))
+		      (progn
+			(push "~A" pars)
+			(push (fortran-format nil item nil nil) pars))))
 		   (array
 		    (dotimes (k (length v))
-		      (push "~/f2cl-lib::fortran-format/" pars)
-		      (push (list (aref v k)) pars)))
+		      #-gcl
+		      (progn
+			(push "~/f2cl-lib::fortran-format/" pars)
+			(push (list (aref v k)) pars))
+		      (progn
+			(push "~A" pars)
+			(push (fortran-format nil (list (aref v k)) nil nil)
+			      pars))))
 		   (t
-		    (push "~/f2cl-lib::fortran-format/" pars)
-		    (push (list v) pars))))
+		    #-gcl
+		    (progn
+		      (push "~/f2cl-lib::fortran-format/" pars)
+		      (push (list v) pars))
+		    #+gcl
+		    (progn
+		      (push "~A" pars)
+		      (push (fortran-format nil (list v) nil nil) pars)))))
 	       ;;(format t "~S~%" (reverse pars))
 	       (nreverse pars))))
     (t
@@ -1576,8 +1601,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.102 2008/03/26 13:19:52 rtoy Rel $
+;;; $Id: macros.l,v 1.103 2008/08/21 20:16:49 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.103  2008/08/21 20:16:49  rtoy
+;;; Gcl doesn' like ~/ format specifier, so rearrange things so we don't
+;;; use it.  (Should we just do the same for every one?)
+;;;
 ;;; Revision 1.102  2008/03/26 13:19:52  rtoy
 ;;; Lazily initialize the lun-hash table.  *lun-hash* starts as an empty
 ;;; hash-table, and lun->stream will initialize units 5, 6, and t as

@@ -1,7 +1,18 @@
 -*- Mode: text -*-
 
 Changes:
-Mar 2007
+August 2008
+------------
+o Added :common-block-file option to F2CL and F2CL-COMPILE.  When set,
+  and when common blocks are to be declared, each common block is
+  written to a separate file whose extension is "cmn and whose name is
+  the name of the common block.
+
+  This might need some more work.  In particular, no check is made to
+  see if the file already exists, so multiple declarations will
+  overwrite each other.
+
+Mar 2008
 ------------
 o F2CL was missing variables first used in PRINT or WRITE statements
   and hence didn't declare them.  We now check for new variables in
@@ -52,7 +63,7 @@ o Lazily initialize *lun-hash* hash-table entries for units 5, 6, and
   t.  Works around an issue found in maxima with clisp.  The
   hash-table contained closed streams for some reason.
 
-Feb 2007
+Feb 2008
 ------------
 o I'm not good with keeping version numbers, so add an RCS Id string
   to each file in a defparameter.  Add new function to list the values

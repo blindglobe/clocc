@@ -607,7 +607,8 @@
 		    :compiler-options (:package :donlp2 :declare-common t
 				       :array-slicing nil
 				       :array-type :simple-array
-				       :float-format double-float)
+				       :float-format double-float
+				       :common-block-file t)
 		    :depends-on ("esgradf"
 				 "esgradh"
 				 "esgradg"
@@ -688,7 +689,8 @@
 		    :compiler-options (:package :donlp2 :declare-common t
 				       :array-slicing nil
 				       :array-type :simple-array
-				       :float-format double-float)
+				       :float-format double-float
+				       :common-block-file t)
 		    :depends-on ("o8rinv"
 				 "o8zup"
 				 "o8rup"

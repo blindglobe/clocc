@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.205 2008/03/11 21:36:33 rtoy Rel $")
+  "$Id: f2cl1.l,v 1.206 2008/08/22 21:30:30 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -157,6 +157,12 @@ only when needed. ")
 
 (defvar *common-blocks-as-arrays* nil)
 
+(defvar *common-block-file* nil)
+
+(defvar *common-block-file-names*
+  nil
+  "List of files created when :common-block-file is enabled")
+
 (defvar *use-function-info*
   t
   "If non-NIL, the database of function return values is used in
@@ -210,20 +216,27 @@ correctly"
 	     *f2cl-function-info*)))
 ;----------------------------------------------------------------------------
 
-(defun f2cl (input-file &key
-	                output-file verbose prune-labels include-comments
-			(auto-save t) (relaxed-array-decls t)
-			(coerce-assigns :as-needed)
-			(extension (or *default-lisp-extension* "lisp"))
-			keep-temp-file
-			(array-type :array array-type-p)
-			(array-slicing t)
-			(package :common-lisp-user)
-			declaim
-			declare-common
-			(float-format *read-default-float-format*)
-	                common-as-array
-			&allow-other-keys)
+(defun f2cl (input-file
+	     &key
+	     verbose
+	     keep-temp-file
+	     (extension (or *default-lisp-extension* "lisp"))
+
+	     output-file
+	     prune-labels
+	     include-comments
+	     (auto-save t)
+	     (relaxed-array-decls t)
+	     (coerce-assigns :as-needed)
+	     (array-type :array array-type-p)
+	     (array-slicing t)
+	     (package :common-lisp-user)
+	     declaim
+	     declare-common
+	     (float-format *read-default-float-format*)
+	     common-as-array
+	     common-block-file
+	     &allow-other-keys)
   "Fortran to Common Lisp converter
 
 INPUT-FILE               File containing Fortran code
@@ -273,6 +286,10 @@ INPUT-FILE               File containing Fortran code
                           common block variables are offsets into the arrays.
                           This mimics Fortran common block layouts.
                           Default = NIL.
+:COMMON-BLOCK-FILE       If common blocks are to be declared, then
+                          each common block is written to a file whose name
+                          is the name of the common block, with the extension
+                          \"cmn\"
 "
 
 
@@ -303,7 +320,8 @@ INPUT-FILE               File containing Fortran code
 	(*entry-points* nil)
 	(*equivalenced-vars* nil)
 	(*float-format* float-format)
-	(*common-blocks-as-arrays* common-as-array))
+	(*common-blocks-as-arrays* common-as-array)
+	(*common-block-file* common-block-file))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -349,25 +367,30 @@ INPUT-FILE               File containing Fortran code
 		    '(:output-file :error-file :prune-labels :include-comments
 		      :auto-save :relaxed-array-decls :coerce-assigns
 		      :keep-lisp-file :array-type :array-slicing :package
-		      :declaim :declare-common :float-format :common-as-array))
+		      :declaim :declare-common :float-format :common-as-array
+		      :common-block-file))
       (push (car key) result)
       (push (second key) result))))
 
 (defun f2cl-compile (filename &rest all-keys
 		     &key
-			      (output-file (compile-file-pathname filename))
-			      error-file prune-labels include-comments
-			      (auto-save t) (relaxed-array-decls t)
-			      (coerce-assigns :as-needed)
-			      (keep-lisp-file t)
-			      (array-type :array)
-			      (array-slicing t)
-			      (package :common-lisp-user)
-			      declaim
-			      declare-common
-			      (float-format *read-default-float-format*)
-		              common-as-array
-			      &allow-other-keys)
+		     error-file
+		     (keep-lisp-file t)
+
+		     (output-file (compile-file-pathname filename))
+		     prune-labels
+		     include-comments
+		     (auto-save t)
+		     (relaxed-array-decls t)
+		     (coerce-assigns :as-needed)
+		     (array-type :array)
+		     (array-slicing t)
+		     (package :common-lisp-user)
+		     declaim
+		     declare-common
+		     (float-format *read-default-float-format*)
+		     common-as-array
+		     &allow-other-keys)
   "Convert the Fortran to Common Lisp and compile the resulting Lisp file
 
 FILENAME                 File containing Fortran code
@@ -414,6 +437,10 @@ FILENAME                 File containing Fortran code
                           common block variables are offsets into the
                           arrays.  This mimics Fortran common block
                           layouts.  Default = NIL.
+:COMMON-BLOCK-FILE       If common blocks are to be declared, then
+                          each common block is written to a file whose name
+                          is the name of the common block, with the extension
+                          \"cmn\"
 "
   (let ((lisp-file
 	 (f2cl filename :prune-labels prune-labels :include-comments include-comments
@@ -533,6 +560,39 @@ FILENAME                 File containing Fortran code
 ;	maybe-extend-bindings
 ;------------------------------------------------------------------------------
 
+(defun print-header (outport declaim package options)
+  ;; Print a header to the file indicating when this was
+  ;; compiled and the version of f2cl used to compile it.
+  ;; Include the options used to compile the file.
+  (let ((version-info (f2cl-version)))
+    (pprint-logical-block (outport version-info :per-line-prefix ";;; ")
+      (format outport "Compiled by f2cl version:~%")
+      (write version-info :stream outport)))
+  (format outport "~2%;;; Using Lisp ~A ~A~%"
+	  (lisp-implementation-type) (lisp-implementation-version))
+  (let ((*print-case* :downcase))
+    ;; Insert in-package and declaim, if needed
+    (when options
+      (pprint-logical-block (outport options :per-line-prefix ";;; ")
+	(format outport "~&Options: ")
+	(write options :stream outport :case :downcase))
+      (format outport "~2%"))
+    (when package
+      (format outport "~&(in-package ~S)~%" (cond ((keywordp package)
+						   package)
+						  ((symbolp package)
+						   (string package))
+						  ((packagep package)
+						   (package-name package))
+						  (t
+						   package))))
+    (when declaim
+      (write (list 'declaim declaim) :stream outport :case :downcase))
+    (when (or package declaim)
+      (format outport "~2%"))
+    ;;(format outport "~2&(use-package :f2cl)~2%")
+    ))
+
 (defun fortran-to-lisp (file ofile &key declaim package options)
   (let ((*package* (find-package :f2cl))
 	*common_array_dims* *format_stmts* *statement-labels*)
@@ -552,38 +612,14 @@ FILENAME                 File containing Fortran code
 	    ;; Print a header to the file indicating when this was
 	    ;; compiled and the version of f2cl used to compile it.
 	    ;; Include the options used to compile the file.
-	    (let ((version-info (f2cl-version)))
-	      (pprint-logical-block (outport version-info :per-line-prefix ";;; ")
-		(format outport "Compiled by f2cl version:~%")
-		(write version-info :stream outport)))
-	    (format outport "~2%;;; Using Lisp ~A ~A~%"
-		    (lisp-implementation-type) (lisp-implementation-version))
-	    (let ((*print-case* :downcase))
-	      ;; Insert in-package and declaim, if needed
-	      (when options
-		(pprint-logical-block (outport options :per-line-prefix ";;; ")
-		  (format outport "~&Options: ")
-		  (write options :stream outport :case :downcase))
-		(format outport "~2%"))
-	      (when package
-		(format outport "~&(in-package ~S)~%" (cond ((keywordp package)
-							     package)
-							    ((symbolp package)
-							     (string package))
-							    ((packagep package)
-							     (package-name package))
-							    (t
-							     package))))
-	      (when declaim
-		(write (list 'declaim declaim) :stream outport :case :downcase))
-	      (when (or package declaim)
-		(format outport "~2%"))
-	      ;;(format outport "~2&(use-package :f2cl)~2%")
-	      )
 	    (translate-and-write-subprog 
 	     (introduce-continue
 	      (readsubprog-extract-format-stmts inport))
-	     outport))))))
+	     outport
+	     ofile
+	     declaim
+	     package
+	     options))))))
   t)
 
 ;---------------------------------------------------------------------------
@@ -931,7 +967,55 @@ FILENAME                 File containing Fortran code
     ret-vals))
 
 
-(defun translate-and-write-subprog (prog-list outport)
+(defun output-common-block (spec-proc spec-decl outport
+			    output-path declaim package options)
+  (labels
+      ((do-core (port s-proc s-decl)
+	 (setf s-proc (fixup-f2cl-lib s-proc *external-function-names*))
+	 (special-print s-proc port)
+	 (terpri port)
+	 (format port "~%~%")
+	 (setf s-decl (fixup-f2cl-lib s-decl *external-function-names*))
+	 (special-print s-decl port)
+	 (terpri port)
+	 (format port "~%~%")
+	 (pushnew (caadr s-proc) *common-block-initialized*))
+       (do-file ()
+	 (let (filenames)
+	   (mapc
+	    #'(lambda (s-proc s-decl)
+		(unless (find (caadr s-proc) *common-block-initialized*)
+		  (let* ((cname (caadr s-proc))
+			 (file (make-pathname
+				:name (string-downcase (string cname))
+				:type "cmn"
+				:defaults output-path)))
+		    (push file filenames)
+		    (with-open-file (port file
+					  :direction :output
+					  :if-exists :supersede)
+				
+		      (format port ";;; -*- Mode: lisp -*-~2%")
+		      (print-header port declaim package options)
+		      (format port "~2%;;; Common block specification~%")
+		      (do-core port s-proc s-decl)))))
+	    spec-proc
+	    spec-decl)
+	 filenames))
+       (do-output (port)
+	 (mapc
+	  #'(lambda (s-proc s-decl)
+	      (unless (find (caadr s-proc) *common-block-initialized*)
+		(do-core port s-proc s-decl)))
+	  spec-proc
+	  spec-decl)))
+    (if *common-block-file*
+	(do-file)
+	(do-output outport))))
+    
+
+(defun translate-and-write-subprog (prog-list outport output-path
+				    declaim package options)
   (clrhash *common-blocks*)
   (clrhash *f2cl-statement-finfo*)
   (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is the do integers
@@ -945,6 +1029,8 @@ FILENAME                 File containing Fortran code
 	*equivalenced-vars*
 	*common_array_dims*
 	)
+
+    (print-header outport declaim package options)
      (setq fort-fun
 	   (do ((lines prog-list (cdr lines)) 
 		(fort-fun nil (append fort-fun
@@ -988,20 +1074,9 @@ FILENAME                 File containing Fortran code
 	 (format t "spec-decl = ~S~%" spec-decl)
 	 (format t "fun = ~S~%" fun))
        (when spec-proc
-	 (mapc #'(lambda (s-proc s-decl)
-		   (unless (find (caadr s-proc) *common-block-initialized*)
-		     (setf s-proc (fixup-f2cl-lib s-proc *external-function-names*))
-		     (special-print s-proc outport)
-		     (terpri outport)
-		     (format outport "~%~%")
-		     (setf s-decl (fixup-f2cl-lib s-decl *external-function-names*))
-		     (special-print s-decl outport)
-		     (terpri outport)
-		     (format outport "~%~%")
-		     (pushnew (caadr s-proc) *common-block-initialized*)))
-	       spec-proc
-	       spec-decl)
-	 (terpri outport))
+	 (setf *common-block-file-names*
+	       (output-common-block spec-proc spec-decl outport
+				    output-path declaim package options)))
 
        #+nil
        (let ((*package* (find-package '#:cl-user)))
@@ -3090,8 +3165,17 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.205 2008/03/11 21:36:33 rtoy Rel $
+;;; $Id: f2cl1.l,v 1.206 2008/08/22 21:30:30 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.206  2008/08/22 21:30:30  rtoy
+;;; o Create function to output the "standard" f2cl header
+;;; o Added :common-block-file option
+;;; o When :common-block-file is non-NIL, the definition for the common
+;;;   block structure and the initializer are written to a new file
+;;;   instead of the main file.
+;;;
+;;;   This might need some work with F2CL-COMPILE.
+;;;
 ;;; Revision 1.205  2008/03/11 21:36:33  rtoy
 ;;; Need to check for reserved names in data implied-do loops.
 ;;;

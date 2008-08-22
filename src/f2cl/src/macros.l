@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.103 2008/08/21 20:16:49 rtoy Exp $")
+  "$Id: macros.l,v 1.104 2008/08/22 21:27:43 rtoy Exp $")
 
 ;; macros:
 ;;	rexpt
@@ -1304,6 +1304,7 @@ causing all pending operations to be flushed"
 		      (progn
 			(push "~/f2cl-lib::fortran-format/" pars)
 			(push (list (aref v k)) pars))
+		      #+gcl
 		      (progn
 			(push "~A" pars)
 			(push (fortran-format nil (list (aref v k)) nil nil)
@@ -1601,8 +1602,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.103 2008/08/21 20:16:49 rtoy Exp $
+;;; $Id: macros.l,v 1.104 2008/08/22 21:27:43 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.104  2008/08/22 21:27:43  rtoy
+;;; Oops.  Forgot one place to conditionalize on gcl.
+;;;
 ;;; Revision 1.103  2008/08/21 20:16:49  rtoy
 ;;; Gcl doesn' like ~/ format specifier, so rearrange things so we don't
 ;;; use it.  (Should we just do the same for every one?)

@@ -28,7 +28,7 @@
 (eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
 
 (defparameter *f2cl6-version*
-  "$Id: f2cl6.l,v 1.46 2008/03/03 17:20:42 rtoy Rel $")
+  "$Id: f2cl6.l,v 1.47 2008/08/23 18:14:16 rtoy Exp $")
 
 ;--------------------------------------------------------------------------  
 ; global stream input for parse-number:
@@ -207,7 +207,7 @@
 		    (let ((maybe-format (string-left-trim " " (subseq prev-line 6))))
 		      (cond
 			((string-equal maybe-format "format"
-					:end1 (min 6 (length maybe-format)))
+				       :end1 (min 6 (length maybe-format)))
 			 (write-line (process-format-line prev-line) outport))
 			((match-include maybe-format)
 			 ;; Handle INCLUDE files.
@@ -220,7 +220,7 @@
 						  :direction :input
 						  :if-does-not-exist :error)
 				 (preprocess-streams f outport))))))
-			 (t
+			(t
 			  (write-line (adjust_nrs (replace_logl_ops prev-line)) outport)))))
 		  (setf prev-line (copy-seq line))
 		  ;; Print out the collected comments, if any
@@ -247,8 +247,8 @@
      (setq inport (make-string-input-stream line)
            outport (make-string-output-stream))
      loop
-     (setq char (read-char inport nil 'eof t))
-     (cond ((eql char 'eof) 
+     (setq char (read-char inport nil 'eof))
+     (cond ((eql char 'eof)
             (return (get-output-stream-string outport)))
            ((char= char '#\.) 
             (parse-logl-op inport outport)
@@ -302,7 +302,7 @@
       (when (member 'eof maybe-line-number)
 	(return-from adjust_nrs (get-output-stream-string outport))))
     (loop
-	(let ((char (read-char *inp* nil 'eof t)))
+	(let ((char (read-char *inp* nil 'eof)))
 	  (cond ((eql char 'eof)
 		 (return-from adjust_nrs (get-output-stream-string outport)))
 
@@ -314,7 +314,7 @@
 		 (setq prev-char #\space)
 		 (write-char #\" outport)
 		 (loop
-		     (setf char (read-char *inp* nil 'eof t))
+		     (setf char (read-char *inp* nil 'eof))
 		     (let ((nxt (peek-char nil *inp* nil nil)))
 		       (cond ((and (char= char #\')
 				   (and nxt (char= nxt #\')))
@@ -498,7 +498,7 @@
 		       (peek-char nil *inp* nil 'eof)))
 		 ((not (my-char= nxt #\Space))
 		  nxt)
-	       (read-char *inp* nil 'eof t))))
+	       (read-char *inp* nil 'eof))))
     #-clisp(declare (inline my-digit-char-p my-char=))
     (let ((in-number-p nil))
       ;; first check prev-char suitable to precede a number
@@ -534,12 +534,11 @@
 	       ;;(format t "parse-number done!?~%")
 	       (return-from parse-number nil)))
 	;; parse rest of number;eof
-	;;(format t "parse rest~%")
 	(loop
 	    (skip-spaces)
-	  (setq char (read-char *inp* nil 'eof t)
-		nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
-	  ;;(format t "    char, nxt-char = ~S ~S~%" char nxt-char)
+	   (setq char (read-char *inp* nil 'eof)
+	         nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
+	   ;;(format t "    char, nxt-char = ~S ~S~%" char nxt-char)
 	  ;; Skip over spaces if the current character is a part of a number.
 	  (when (and (eql nxt-char #\Space)
 		     (or (my-digit-char-p char)
@@ -552,7 +551,7 @@
 	    )
 	  (when (eql nxt-char 'eof)
 	    (setq nxt-char `#\space))
-	  ;;(format t "new char, nxt-char = ~S ~S~%" char nxt-char)
+	   ;;(format t "new char, nxt-char = ~S ~S~%" char nxt-char)
 	  (cond ((eql char 'eof)
 		 ;; Assume number is complete.
 		 (write (get-output-stream-string str) :stream outport :escape nil)
@@ -601,13 +600,13 @@
 			;; Write the exponent char out, read and
 			;; discard the "+" char
 			(write-char char str)
-			(read-char *inp* nil 'eof t))
+			(read-char *inp* nil 'eof))
 		       ((my-char= nxt-char '#\-)
 			;; Write the exponent char out, read and
 			;; discard "-" char, and send a "%" out
 			;; instead.
 			(write-char char str)
-			(read-char *inp* nil 'eof t)
+			(read-char *inp* nil 'eof)
 			(write-char '#\% str))
 		       ((my-digit-char-p nxt-char)
 			;; Exponent followed by a digit.  Write the
@@ -648,8 +647,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.46 2008/03/03 17:20:42 rtoy Rel $
+;;; $Id: f2cl6.l,v 1.47 2008/08/23 18:14:16 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.47  2008/08/23 18:14:16  rtoy
+;;; Fixes for ecl, but should work for other Lisps.  The recursive-p arg
+;;; for read-char is not needed, I think.
+;;;
 ;;; Revision 1.46  2008/03/03 17:20:42  rtoy
 ;;; Output a comma after a Hollerith string, to make sure we separate the
 ;;; string from anything that follows.

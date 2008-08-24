@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.206 2008/08/22 21:30:30 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.207 2008/08/24 00:25:03 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1116,10 +1116,10 @@ FILENAME                 File containing Fortran code
 	  (*print-pretty* t)
 	  (*print-case* :downcase)
 	  (*print-circle* nil)
-	  ;; Do we need this?  clisp basically ignores all other
-	  ;; settings and tries very, very hard to make sure what's
-	  ;; written is read back in exactly the same way.
-	  #+nil (*print-readably* t)
+	  ;; Clisp basically seems ignores all other settings and
+	  ;; tries very, very hard to make sure what's written is read
+	  ;; back in exactly the same way if *print-readably* is non-NIL.
+	  (*print-readably* nil)
 	  (*read-default-float-format* *float-format*))
       (write x :stream o))))
 ;------------------------------------------------------------------------------
@@ -3165,8 +3165,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.206 2008/08/22 21:30:30 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.207 2008/08/24 00:25:03 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.207  2008/08/24 00:25:03  rtoy
+;;; For clisp, SPECIAL-PRINT needs to bind *PRINT-READABLY* to NIL so the
+;;; output doesn't have the package qualifiers on every symbol.
+;;;
 ;;; Revision 1.206  2008/08/22 21:30:30  rtoy
 ;;; o Create function to output the "standard" f2cl header
 ;;; o Added :common-block-file option

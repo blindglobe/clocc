@@ -28,7 +28,7 @@
 (eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
 
 (defparameter *f2cl6-version*
-  "$Id: f2cl6.l,v 1.47 2008/08/23 18:14:16 rtoy Exp $")
+  "$Id: f2cl6.l,v 1.48 2008/08/24 00:56:27 rtoy Exp $")
 
 ;--------------------------------------------------------------------------  
 ; global stream input for parse-number:
@@ -151,8 +151,18 @@
     (with-open-file (outport outfile-name
 			     :direction :output
 			     :if-exists :rename-and-delete)
-      (let ((*default-pathname-defaults* (make-pathname :directory
-							(pathname-directory file))))
+      ;; Set *default-pathname-defaults* to be where our file is, in
+      ;; case there are INCLUDE statements.  We (currently?) 
+      ;; arbitrarily assume the include file is in the same directory
+      ;; as the file that wants to include it.
+      (let ((*default-pathname-defaults*
+	     (merge-pathnames
+	      (make-pathname :directory
+			     (pathname-directory file))
+	      ;; Get the current directory for ECL since
+	      ;; *d-p-d* appears to default to #P"",
+	      ;; which isn't helpful for merging.
+	      #+ecl (si:getcwd))))
 	(preprocess-streams inport outport)))))
   
 (defun preprocess-streams (inport outport)
@@ -647,8 +657,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.47 2008/08/23 18:14:16 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.48 2008/08/24 00:56:27 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.48  2008/08/24 00:56:27  rtoy
+;;; For ecl, set *default-pathname-defaults* using the current working
+;;; directory because #P"" doesn't help us when merging.
+;;;
+;;; Do we need to do something similar for other Lisps?
+;;;
 ;;; Revision 1.47  2008/08/23 18:14:16  rtoy
 ;;; Fixes for ecl, but should work for other Lisps.  The recursive-p arg
 ;;; for read-char is not needed, I think.

@@ -444,15 +444,18 @@
 (mk:defsystem donlp2
   :source-pathname *donlp2-root*
   :components
-  ((:module donlp2
+  ((:module support
+	    :source-pathname "donlp2"
+	    :source-extension "lisp"
+	    :components
+	    ((:file "support")))
+   (:module donlp2
 	    :source-extension "f"
 	    :language :f2cl
 	    :compiler-options (:package :donlp2 :array-slicing nil :array-type :simple-array)
 	    :components
 	    (
-	     (:file "support.lisp"
-		    :language :lisp
-		    :compiler-options nil)
+	     
 	     ;; Default dummy routines.  These are default versions
 	     ;; that the user can modify.
 	     (:file "eval_extern")

@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.207 2008/08/24 00:25:03 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.208 2008/08/25 18:54:08 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1522,21 +1522,25 @@ FILENAME                 File containing Fortran code
          *explicit_vble_decls* 
               (list (list (convert-data-type (variable-value '%type bindings))
                           (list fun-name))))
-   (setq *subprog-arglist* (remove '|,| (variable-value '%arg-list bindings)))
+   (setq *subprog-arglist*
+	 (mapcar #'check-reserved-lisp-names
+		 (remove '|,| (variable-value '%arg-list bindings))))
    (setf *subprog_name* fun-name)
    (return
    (list 'defun 
          fun-name 
-         (remove '|,| (variable-value '%arg-list bindings))))))
+         *subprog-arglist*))))
 
 ; untyped function definition
 (defun parse-fun-definition (bindings)
    (setq *function-flag* t)
-   (setq *subprog-arglist* (remove '|,| (variable-value '%arg-list bindings)))
+   (setq *subprog-arglist*
+	 (mapcar #'check-reserved-lisp-names
+		 (remove '|,| (variable-value '%arg-list bindings))))
    (list 'defun 
          (setf *subprog_name*
 	       (check-reserved-lisp-names (variable-value '%name bindings)))
-         (remove '|,| (variable-value '%arg-list bindings))))
+         *subprog-arglist*))
 
 
 ;; Entry point
@@ -3165,8 +3169,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.207 2008/08/24 00:25:03 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.208 2008/08/25 18:54:08 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.208  2008/08/25 18:54:08  rtoy
+;;; Was not checking for reserved lisp names in the argument list in
+;;; PARSE-TYPED-FUN-DEFINITION and PARSE-FUN-DEFINITION.
+;;;
 ;;; Revision 1.207  2008/08/24 00:25:03  rtoy
 ;;; For clisp, SPECIAL-PRINT needs to bind *PRINT-READABLY* to NIL so the
 ;;; output doesn't have the package qualifiers on every symbol.

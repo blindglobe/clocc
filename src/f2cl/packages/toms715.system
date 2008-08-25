@@ -1,8 +1,13 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: toms715.system,v 1.6 2008/02/26 18:43:52 rtoy Rel $
+;;; $Id: toms715.system,v 1.7 2008/08/25 16:54:08 rtoy Exp $
 ;;; $Log: toms715.system,v $
+;;; Revision 1.7  2008/08/25 16:54:08  rtoy
+;;; o Get rid of the logical pathname translations.
+;;; o Define *TOMS715-ROOT* to hold the directory containing
+;;;   the source code for TOMS 715.
+;;;
 ;;; Revision 1.6  2008/02/26 18:43:52  rtoy
 ;;; Clean up logical pathname.
 ;;;
@@ -25,28 +30,18 @@
 ;;; Initial version.
 ;;;
 
-#||
-;; Convert a Fortran file to Lisp and compile the Lisp file.
-(defun f2cl-compile (filename &key output-file error-file (array-slicing t) (array-type 'array))
-  (compile-file (f2cl:f2cl filename :array-slicing array-slicing
-		      :array-type array-type)
-		:output-file output-file))
-
-||#
-
-(setf (logical-pathname-translations "toms715")
-      (list (list "**;*.*.*"
-		  (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
-						  :directory '(:relative "toms" "715" :wild-inferiors)
-						  :name :wild :type :wild)
-				   *load-pathname*))))
+(defparameter *toms715-root*
+  (merge-pathnames
+   #P"toms/715"
+   (make-pathname :host (pathname-host *load-pathname*)
+		  :directory (pathname-directory *load-pathname*))))
 
 (mk:define-language :f2cl
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
 (mk:defsystem toms715
-    :source-pathname (translate-logical-pathname "toms715:")
+    :source-pathname *toms715-root*
     :source-extension "f"
     :language :f2cl
     :components
@@ -95,8 +90,10 @@
 	       (:file "rybesl")
 	       ))))
 
+;; Tests for TOMS 715.  The tests have the same name as the file
+;; listed below.  Hence to run the J0 test, run (j0test).
 (mk:defsystem toms715-tests
-    :source-pathname (translate-logical-pathname "toms715:")
+    :source-pathname *toms715-root*
     :source-extension "f"
     :language :f2cl
     :depends-on ("toms715")

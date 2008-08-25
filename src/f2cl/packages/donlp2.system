@@ -441,6 +441,24 @@
 						       :array-slicing nil
 						       :array-type :simple-array))))))
 
+;; Must call (donlp2::/blockdata/) before running (donlp2::donlp2).
+;; Output in ROBOTAXXX.*.
+;;
+;; Doesn't appear to work.  It hangs with a zero gradient.
+(mk:defsystem "ex-robota"
+  :source-pathname *donlp2-root*
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "robota"
+		    :compiler-options (:package :donlp2 :declare-common t
+						       :array-slicing nil
+						       :array-type :simple-array))))))
+
 (mk:defsystem donlp2
   :source-pathname *donlp2-root*
   :components

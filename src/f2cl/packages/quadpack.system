@@ -3,8 +3,13 @@
 ;;; This is a simple defsystem for converting QUADPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: quadpack.system,v 1.9 2008/03/12 15:58:06 rtoy Rel $
+;;; $Id: quadpack.system,v 1.10 2008/08/25 16:53:32 rtoy Exp $
 ;;; $Log: quadpack.system,v $
+;;; Revision 1.10  2008/08/25 16:53:32  rtoy
+;;; o Get rid of the logical pathname translations.
+;;; o Define *QUADPACK-ROOT* to hold the directory containing
+;;;   quadpack.system.
+;;;
 ;;; Revision 1.9  2008/03/12 15:58:06  rtoy
 ;;; Fixup the quadpack-lisp system to generate just the lisp files in the
 ;;; slatec package.
@@ -42,44 +47,16 @@
 ;;;
 ;;;
 
-;;; Change this as appropriate.
-
-;; I (rtoy) was stupid and named the Fortran directory Fortran, which
-;; doesn't work so well with logical pathnames.  This is an attempt to
-;; convert that appropriately by setting up the correct translation.
-(let ((base (if (typep *load-pathname* 'logical-pathname)
-					 (translate-logical-pathname *load-pathname*)
-					 *load-pathname*)))
-  (setf (logical-pathname-translations "quadpack")
-	(list (list "fortran;**;*.*.*"
-		    (merge-pathnames (make-pathname :host (pathname-host base)
-						    :directory '(:relative "quadpack" "Fortran"
-								 :wild-inferiors)
-						    :name :wild
-						    :type :wild)
-				     base))
-	      (list "**;d1mach.*.*"
-		    (merge-pathnames (make-pathname :host (pathname-host base)
-						    :directory '(:relative)
-						    :name :wild
-						    :type :wild)
-				     base))
-	      (list "**;i1mach.*.*"
-		    (merge-pathnames (make-pathname :host (pathname-host base)
-						    :directory '(:relative)
-						    :name :wild
-						    :type :wild)
-				     base))
-	      (list "**;*.*.*"
-		    (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
-						    :directory '(:relative "quadpack" :wild-inferiors)
-						    :name :wild :type :wild)
-				     *load-pathname*)))))
+;; Quadpack root directory, basically the directory containing
+;; quadpack.system.
+(defparameter *quadpack-root*
+  (make-pathname :host (pathname-host *load-pathname*)
+		 :directory (pathname-directory *load-pathname*)))
 
 
 ;; Defsystem for d1mach and i1mach
 (mk:defsystem mach-par
-    :source-pathname #p"quadpack:"
+    :source-pathname *quadpack-root*
     :source-extension "lisp"
     :components
     ((:file "d1mach")
@@ -102,7 +79,8 @@
 
 ;; Defsystem for quadpack.
 (mk:defsystem quadpack
-    :source-pathname (translate-logical-pathname "quadpack:Fortran;")
+    :source-pathname (merge-pathnames "quadpack/Fortran"
+				      *quadpack-root*)
     :depends-on ("mach-par")
     :components
     ((:module Fortran
@@ -214,8 +192,9 @@
 ;; quadpack values and the true values for some of the tests where the
 ;; true value is in terms of Bessel functions.
 (mk:defsystem quadpack-test
-    :source-pathname (translate-logical-pathname "quadpack:")
-    :depends-on ("mach-par")
+    :source-pathname (merge-pathnames "quadpack"
+				      *quadpack-root*)
+    :depends-on ("mach-par" "quadpack")
     :components
     ((:file "quadpack-tests")))
 
@@ -229,7 +208,8 @@
     :binary-extension "lisp")
 
 (mk:defsystem quadpack-lisp
-    :source-pathname (translate-logical-pathname "quadpack:Fortran;")
+    :source-pathname (merge-pathnames "quadpack/Fortran"
+				      *quadpack-root*)
     :depends-on ("mach-par")
     :compiler-options (:array-slicing nil
 		       :array-type :simple-array

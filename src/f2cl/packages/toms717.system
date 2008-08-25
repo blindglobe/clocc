@@ -5,15 +5,14 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
-(setf (logical-pathname-translations "toms717")
-      (list (list "**;*.*.*"
-		  (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
-						  :directory '(:relative "toms" "717" :wild-inferiors)
-						  :name :wild :type :wild)
-				   *load-pathname*))))
+(defparameter *toms717-root*
+  (merge-pathnames
+   #P"toms/717"
+   (make-pathname :host (pathname-host *load-pathname*)
+		  :directory (pathname-directory *load-pathname*))))
 
 (mk:defsystem toms717
-  :source-pathname (pathname "toms717:")
+  :source-pathname *toms717-root*
     :source-extension "f"
     :language :f2cl
     :components
@@ -113,14 +112,17 @@
 	       (:file "df7dhb")
 	       (:file "dg7itb"
 		      :depends-on ("i7shft" "dq7rsh" "dv7vmp" "dv7ipr" "ds7ipr"
-					    "dl7msb" "i7copy" "ds7dmp" "dg7qsb"))
+					    "dl7msb" "i7copy" "ds7dmp" "dg7qsb"
+					    "i7pnvr" "df7dhb"))
 	       (:file "dg7qsb"
 		      :depends-on ("dv7ipr" "dv7vmp" "ds7bqn"))
 	       (:file "dh2rfa")
 	       (:file "dh2rfg")
 	       (:file "dl7msb"
-		      :depends-on ("dv7ipr" "dv7vmp" "ds7bqn" "dq7rsh"))
-	       (:file "dq7rsh")
+		      :depends-on ("dv7ipr" "dv7vmp" "ds7bqn" "dq7rsh"
+					    "dd7mlp"))
+	       (:file "dq7rsh"
+		      :depends-on ("dh2rfg" "dh2rfa"))
 	       (:file "ds7bqn"
 		      :depends-on ("i7shft" "dv7shf" "dv7ipr"))
 	       (:file "ds7dmp")
@@ -135,7 +137,7 @@
 	       ))))
 
 (mk:defsystem toms717-tests
-  :source-pathname (pathname "toms717:")
+  :source-pathname *toms717-root*
     :source-extension "f"
     :language :f2cl
     :depends-on ("toms717")

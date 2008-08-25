@@ -124,6 +124,9 @@ weaponas: donlp2main.o weaponas.o libdonlp2.a
 robota: donlp2main.o robota.o libdonlp2.a
 	$(F77) -o $@ $^
 
+robotc: donlp2main.o robotc.o libdonlp2.a
+	$(F77) -o $@ $^
+
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 
@@ -153,7 +156,8 @@ PROGS = \
 	tp383mod \
 	undefexa \
 	weaponas \
-	robota
+	robota \
+	robotc
 
 tests : $(PROGS)
 	for f in $^; do $$f; done

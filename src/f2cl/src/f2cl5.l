@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.192 2008/03/14 19:59:03 rtoy Rel $")
+  "$Id: f2cl5.l,v 1.193 2008/09/09 18:56:41 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -78,6 +78,7 @@
 	 nil)
 	((symbolp exprs)
 	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = equal > < >= <= >< |:|
+				    /=
 				    f2cl-// cmplx fchar
 				    fref fref-string f2cl/
 				    flog fsqrt ffloat freal
@@ -3834,8 +3835,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.192 2008/03/14 19:59:03 rtoy Rel $
+;;; $Id: f2cl5.l,v 1.193 2008/09/09 18:56:41 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.193  2008/09/09 18:56:41  rtoy
+;;; Forgot to include /= in check_new_vbles.  /= can't be a Fortran
+;;; variable name.
+;;;
 ;;; Revision 1.192  2008/03/14 19:59:03  rtoy
 ;;; Fix the issue with do loops with the same end statement.
 ;;;

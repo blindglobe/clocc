@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.193 2008/09/09 18:56:41 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.194 2008/09/10 17:42:01 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -79,10 +79,7 @@
 	((symbolp exprs)
 	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = equal > < >= <= >< |:|
 				    /=
-				    f2cl-// cmplx fchar
-				    fref fref-string f2cl/
-				    flog fsqrt ffloat freal
-				    expt
+				    f2cl-// 
 				    %false% %true%
 				    funcall))
 		    (member exprs *fortran-keywords*)
@@ -92,6 +89,9 @@
 		    (member exprs *undeclared_vbles*)
 		    (sym-is-fun-name (list exprs))
 		    (sym-is-number-p exprs))
+		;; This aren't new variables either because they can't
+		;; be Fortran variables names or we've seen them
+		;; already somewhere.
 		nil)
 	       ((eq exprs 'pause)
 		)
@@ -111,6 +111,10 @@
 	       ((eq (first exprs) 'make-array)
 		;;Nothing to do
 		)
+	       ((cdr exprs)
+		;; Have a function call.  Only need to look at the
+		;; args for new variables
+		(mapc #'check_new_vbles (cdr exprs)))
 	       (t
 		(mapc #'check_new_vbles exprs))))
 	(t
@@ -3835,8 +3839,18 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.193 2008/09/09 18:56:41 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.194 2008/09/10 17:42:01 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.194  2008/09/10 17:42:01  rtoy
+;;; Fixes for check_new_vbles.
+;;;
+;;; o flog, fsqrt, ffloat, freal, expt are valid Fortran variable names so
+;;;   we need to allow them.  (Previously, they wouldn't get initialized
+;;;   and cause compilation errors.  These variables are in the f2cl-lib
+;;;   package instead of the current package, which is annoying.)
+;;; o For function calls, we only need to look at the args for new
+;;;   variables; the function itself isn't a new variable.
+;;;
 ;;; Revision 1.193  2008/09/09 18:56:41  rtoy
 ;;; Forgot to include /= in check_new_vbles.  /= can't be a Fortran
 ;;; variable name.

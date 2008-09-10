@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.195 2008/09/10 17:56:24 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.196 2008/09/10 18:09:43 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2714,7 +2714,7 @@
   '(abs sin cos tan
     asin acos atan
     sinh cosh tanh
-    exp sign max min 
+    exp max min 
     mod))
 
 ;; Check if the Fortran name would collide with Lisp names like T, PI,
@@ -3846,8 +3846,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.195 2008/09/10 17:56:24 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.196 2008/09/10 18:09:43 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.196  2008/09/10 18:09:43  rtoy
+;;; Don't think sign should be an +allowed-lisp-name+.
+;;;
 ;;; Revision 1.195  2008/09/10 17:56:24  rtoy
 ;;; Append a $ for external symbols in the f2cl-lib package.  Not strictly
 ;;; necessary, but makes the code look nicer.  So if the fortran code used

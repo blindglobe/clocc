@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.194 2008/09/10 17:42:01 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.195 2008/09/10 17:56:24 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2735,7 +2735,14 @@
 	  ((or (and found-it
 		    (not (eq access :internal))
 		    (fboundp found-it))
-	       (member x +reserved-lisp-names+))
+	       (member x +reserved-lisp-names+)
+	       (eq :external (nth-value 1 (find-symbol (symbol-name x) :f2cl-lib))))
+	   ;; We want to append "$" for certain cases to prevent collisions.
+	   ;;
+	   ;; 1. External functions in the common-lisp package.
+	   ;;
+	   ;; 2. External symbols in the f2cl-lib package.  (Not
+	   ;;    strictly necessary, but does make the code nicer).
 	   (intern (concatenate 'string (string x) "$")))
 	  (t
 	   x))))
@@ -3839,8 +3846,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.194 2008/09/10 17:42:01 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.195 2008/09/10 17:56:24 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.195  2008/09/10 17:56:24  rtoy
+;;; Append a $ for external symbols in the f2cl-lib package.  Not strictly
+;;; necessary, but makes the code look nicer.  So if the fortran code used
+;;; the variable flog, we don't see the translation using f2cl-lib:flog,
+;;; but flog$.
+;;;
 ;;; Revision 1.194  2008/09/10 17:42:01  rtoy
 ;;; Fixes for check_new_vbles.
 ;;;

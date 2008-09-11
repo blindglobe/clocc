@@ -3,8 +3,10 @@
 ;; A sample defsystem.
 
 (mk:defsystem f2cl
-  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "src"))
-				    (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-pathname
+  (merge-pathnames (make-pathname :directory '(#-gcl :relative "src"))
+		   (make-pathname :directory (pathname-directory #-gcl *load-pathname*
+								 #+gcl sys:*load-pathname*)))
     :source-extension "l"
     :depends-on nil
     :components

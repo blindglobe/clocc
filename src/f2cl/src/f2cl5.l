@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.196 2008/09/10 18:09:43 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.197 2008/09/11 15:03:25 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2718,26 +2718,25 @@
     mod))
 
 ;; Check if the Fortran name would collide with Lisp names like T, PI,
-;; NIL, FUNCALL, PROG, etc.  If it does, replace it a new name with a
-;; trailing underscore.
-
-#+nil
-(defun check-reserved-lisp-names (x)
-  (if (member x +reserved-lisp-names+)
-      (intern (concatenate 'string (string x) "_"))
-      x))
+;; NIL, FUNCALL, PROG, etc.  If it does, replace it a new name
 
 (defun check-reserved-lisp-names (x)
   (multiple-value-bind (found-it access)
       (find-symbol (string x) :common-lisp)
-    (cond ((member x +allowed-lisp-names+)
+    (cond ((or (member x +allowed-lisp-names+)
+	       (member x '(d1mach i1mach %false% %true%)))
+	   ;; Don't want to mangle allowed-lisp-names or some special
+	   ;; symbols from f2cl or f2cl-lib.
 	   x)
 	  ((or (and found-it
 		    (not (eq access :internal))
 		    (fboundp found-it))
 	       (member x +reserved-lisp-names+)
 	       (eq :external (nth-value 1 (find-symbol (symbol-name x) :f2cl-lib))))
-	   ;; We want to append "$" for certain cases to prevent collisions.
+	   ;; We want to append "$" for certain cases to prevent
+	   ;; collisions.  (Any character can be used.  But we can't
+	   ;; prepend because f2cl wants to look at the first
+	   ;; character to determine the default variable type.)
 	   ;;
 	   ;; 1. External functions in the common-lisp package.
 	   ;;
@@ -3846,8 +3845,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.196 2008/09/10 18:09:43 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.197 2008/09/11 15:03:25 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.197  2008/09/11 15:03:25  rtoy
+;;; o Need a few more special cases where we don't want to mangle the
+;;;   symbol name.
+;;; o Add some comments on why we append.
+;;;
 ;;; Revision 1.196  2008/09/10 18:09:43  rtoy
 ;;; Don't think sign should be an +allowed-lisp-name+.
 ;;;

@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.105 2008/09/10 18:53:49 rtoy Exp $")
+  "$Id: macros.l,v 1.106 2008/09/15 15:27:36 rtoy Exp $")
 
 ;; macros:
 ;;	rexpt
@@ -529,44 +529,72 @@ is not included")
 ;; cost of MPNORM (from MPFUN) from 48.89 sec to 24.88 sec (a factor
 ;; of 2!) when computing pi to 29593 digits or os.
 
+(declaim (inline rint-s rint-d))
 #+(and cmu (not x86))
-(defun aint (x)
-  (etypecase x
-    (single-float
-     (let ((const (scale-float 1f0 24)))
-       (if (>= x 0)
-	 (+ (- (- x 0.5f0) const) const)
-	 (- (+ (+ x 0.5f0) const) const))))
-    (double-float
-     (let ((const (scale-float 1d0 53)))
-       (if (>= x 0)
-	 (+ (- (- x 0.5d0) const) const)
-	 (- (+ (+ x 0.5d0) const) const))))))
+(progn
+(defun rint-s (x)
+  (declare (single-float x))
+  (let ((const (scale-float 1f0 24)))
+    (if (>= x 0)
+	(+ (- x const) const)
+	(- (+ x const) const))))
+
+(defun rint-d (x)
+  (declare (double-float x))
+  (let ((const (scale-float 1d0 53)))
+    (if (>= x 0)
+	(+ (- x const) const)
+	(- (+ x const) const))))
+)
 
 #+(and cmu x86)
-(let ((junks (make-array 1 :element-type 'single-float))
-      (junkd (make-array 1 :element-type 'double-float)))
-  (defun aint (x)
-    ;; ftruncate is exactly what we want.
-    (etypecase x
-      (single-float
-       (let ((const (scale-float 1f0 24)))
-	 (if (>= x 0)
-	     (progn
-	       (setf (aref junks 0) (- x 0.5f0))
-	       (+ (- (aref junks 0) const) const))
-	     (progn
-	       (setf (aref junks 0) (+ x 0.5f0))
-	       (- (+ (aref junks 0) const) const)))))
-      (double-float
-       (let ((const (scale-float 1d0 53)))
-	 (if (>= x 0)
-	     (progn
-	       (setf (aref junkd 0) (- x 0.5d0))
-	       (+ (- (aref junkd 0) const) const))
-	     (progn
-	       (setf (aref junkd 0) (+ x 0.5d0))
-	       (- (+ (aref junkd 0) const) const))))))))
+(progn
+(defun rint-s (x)
+  (declare (single-float x))
+  (let ((junks (make-array 1 :element-type 'single-float))
+	(const (scale-float 1f0 24)))
+    (if (>= x 0)
+	(progn
+	  (setf (aref junks 0) (- x const))
+	  (+ (aref junks 0) const))
+	(progn
+	  (setf (aref junks 0) (+ x const))
+	  (- (aref junks 0) const)))))
+
+(defun rint-d (x)
+  (declare (double-float x))
+  (let ((junkd (make-array 1 :element-type 'double-float))
+	(const (scale-float 1d0 53)))
+    (if (>= x 0)
+	(progn
+	  (setf (aref junkd 0) (- x const))
+	  (+ (aref junkd 0) const))
+	(progn
+	  (setf (aref junkd 0) (+ x const))
+	  (- (aref junkd 0) const)))))
+)
+
+;; Truncate x to an integer.
+#+cmu
+(defun aint (x)
+  ;; rint above is fast.  We use it to round the number, and then
+  ;; adjust the result to truncate.
+  (etypecase x
+    (single-float
+     (let ((r (rint-s x)))
+       (if (> (abs r) (abs x))
+	   (if (> r 0)
+	       (- r 1)
+	       (+ r 1))
+	   r)))
+    (double-float
+     (let ((r (rint-d x)))
+       (if (> (abs r) (abs x))
+	   (if (> r 0)
+	       (- r 1)
+	       (+ r 1))
+	   r)))))
+    
 
 #-cmu
 (defun aint (x)
@@ -1604,8 +1632,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.105 2008/09/10 18:53:49 rtoy Exp $
+;;; $Id: macros.l,v 1.106 2008/09/15 15:27:36 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.106  2008/09/15 15:27:36  rtoy
+;;; Fix serious bug in aint.  aint(x) for x an integer was returning x-1
+;;; (for positive x).  It should have returned x.
+;;;
 ;;; Revision 1.105  2008/09/10 18:53:49  rtoy
 ;;; The case where the arg was negative or zero was mishandled and ended
 ;;; up being printed using ~E.  Should have been ~F.

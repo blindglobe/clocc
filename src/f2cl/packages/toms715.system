@@ -1,8 +1,13 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: toms715.system,v 1.7 2008/08/25 16:54:08 rtoy Exp $
+;;; $Id: toms715.system,v 1.8 2008/09/15 02:27:34 rtoy Exp $
 ;;; $Log: toms715.system,v $
+;;; Revision 1.8  2008/09/15 02:27:34  rtoy
+;;; Instead of compiling and using the Fortran version of machar, use the
+;;; Lisp version.  Some x86 systems can't run machar correctly, due to the
+;;; 80-bit floats used internally, even though double-floats are used.
+;;;
 ;;; Revision 1.7  2008/08/25 16:54:08  rtoy
 ;;; o Get rid of the logical pathname translations.
 ;;; o Define *TOMS715-ROOT* to hold the directory containing
@@ -40,10 +45,21 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
+;;   On some (all?) x86 systems, machar doesn't correctly compute the
+;;   desired values.  This is due to the 80-bit floats on x86.
+;;   Non-x86 systems or x86 systems using SSE2 for floats can probably
+;;   compile and run the Fortran version without problems.
+(mk:defsystem machar
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-extension "lisp"
+  :components
+  ((:file "machar")))
+
 (mk:defsystem toms715
     :source-pathname *toms715-root*
     :source-extension "f"
     :language :f2cl
+    :depends-on ("machar")
     :components
     ((:module "715"
 	      :source-pathname ""
@@ -81,7 +97,8 @@
 	       (:file "ei")
 	       (:file "eone")
 	       (:file "expei")
-	       (:file "machar")
+	       ;; Use the Lisp equivalent.
+	       ;;(:file "machar")
 	       (:file "psi")
 	       (:file "ren")
 	       (:file "ribesl")

@@ -3,8 +3,12 @@
 ;;; This is a simple defsystem for converting QUADPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: quadpack.system,v 1.10 2008/08/25 16:53:32 rtoy Exp $
+;;; $Id: quadpack.system,v 1.11 2008/09/15 19:18:05 rtoy Exp $
 ;;; $Log: quadpack.system,v $
+;;; Revision 1.11  2008/09/15 19:18:05  rtoy
+;;; o Make *quadpack-root* work for gcl
+;;; o Forgot to specify the source extension for quadpack-test.
+;;;
 ;;; Revision 1.10  2008/08/25 16:53:32  rtoy
 ;;; o Get rid of the logical pathname translations.
 ;;; o Define *QUADPACK-ROOT* to hold the directory containing
@@ -50,8 +54,10 @@
 ;; Quadpack root directory, basically the directory containing
 ;; quadpack.system.
 (defparameter *quadpack-root*
-  (make-pathname :host (pathname-host *load-pathname*)
-		 :directory (pathname-directory *load-pathname*)))
+  (let ((load-path #-gcl *load-pathname*
+		   #+gcl sys:*load-pathname*))
+    (make-pathname :host (pathname-host load-path)
+		   :directory (pathname-directory load-path))))
 
 
 ;; Defsystem for d1mach and i1mach
@@ -194,6 +200,7 @@
 (mk:defsystem quadpack-test
     :source-pathname (merge-pathnames "quadpack"
 				      *quadpack-root*)
+    :source-extension "lisp"
     :depends-on ("mach-par" "quadpack")
     :components
     ((:file "quadpack-tests")))

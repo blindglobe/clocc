@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.90 2008/06/16 16:02:33 sds Exp $
+;;; $Id: math.lisp,v 2.91 2008/09/17 19:10:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -47,7 +47,7 @@
    safe-fun safe-fun1 safe-/ s/ d/
    convex-hull1 convex-hull sharpe-ratio to-percent percent-change
    rel-diff approx=-abs approx=-rel approx=
-   binary-search newton integrate-simpson add-probabilities
+   binary-search newton integrate-simpson ode1 add-probabilities
    line make-line line-val line-rsl line-below-p line-above-p intersect
    with-line line-adjust line-adjust-dir line-adjust-list
    line-thru-points regress lincom
@@ -1670,6 +1670,14 @@ Returns the integral, the last approximation, and the number of points."
        ((approx=-abs int int-last) (values int int-last mm))
     (declare (double-float sum-odd sum-even hh f0 f1 fm int int-last)
              (type index-t mm))))
+
+(defun ode1 (f &key (y0 0) (x0 0) (dx 0.1) (x1 1))
+  "Solve a first order ODE y'=f(x,y) for y(X0)=Y0 upto X1 with step DX.
+Return the list of (x y) pairs."
+  (loop :for x :from x0 :to x1 :by dx
+    :for yprim = (funcall f x0 y0) :then (funcall f x y)
+    :for y = y0 :then (+ y (* dx yprim))
+    :collect (cons x y)))
 
 (defun add-probabilities (&rest pp)
   "Add probabilities.

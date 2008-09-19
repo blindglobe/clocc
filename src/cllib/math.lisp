@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.92 2008/09/19 15:42:48 sds Exp $
+;;; $Id: math.lisp,v 2.93 2008/09/19 17:51:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -47,7 +47,8 @@
    safe-fun safe-fun1 safe-/ s/ d/
    convex-hull1 convex-hull sharpe-ratio to-percent percent-change
    rel-diff approx=-abs approx=-rel approx=
-   binary-search newton integrate-simpson ode1 add-probabilities
+   binary-search mid-real mid-integer newton integrate-simpson ode1
+   add-probabilities
    line make-line line-val line-rsl line-below-p line-above-p intersect
    with-line line-adjust line-adjust-dir line-adjust-list
    line-thru-points regress lincom
@@ -1626,11 +1627,15 @@ denominator.  Sign is ignored."
   (declare (double-float v0 v1))
   (d/ (abs (- v1 v0)) (min (abs v0) (abs v1))))
 
-(defun binary-search (beg end func)
+(defun mid-real (beg end) (/ (+ beg end) 2))
+(defun mid-integer (beg end) (ash (+ beg end) -1))
+(defun binary-search (beg end func &key (fmid #'mid-real))
   "Find the point where FUNC's value changes between BEG and END.
-To look for a zero, use (COMPOSE PLUSP MY-FUNC) as FUNC."
+To look for a zero, use (COMPOSE PLUSP MY-FUNC) as FUNC.
+To limit the search to integers, use :FMID #'MID-INTEGER.
+If not found, 3rd and 4th values are the same."
   (loop :for vb = (funcall func beg) :for ve = (funcall func end)
-    :for mid = (/ (+ beg end) 2) :for vm = (funcall func mid)
+    :for mid = (funcall fmid beg end) :for vm = (funcall func mid)
     :when (or (eql vb ve) (eql beg mid) (eql end mid))
     :return (values beg end vb ve)
     :do (if (eql vm vb) (setq beg mid) (setq end mid))))

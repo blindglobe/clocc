@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.48 2008/06/16 16:02:34 sds Exp $
+;;; $Id: tests.lisp,v 2.49 2008/09/19 17:51:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -96,6 +96,18 @@
       (ts-perm 3)
       (ts-perm 4)
       (ts-perm 5))
+    (flet ((vec-find (vec x)
+             (binary-search 0 (1- (length vec))
+                            (lambda (i) (<= (aref vec i) x))
+                            :fmid #'mid-integer)))
+      (dolist (v '((#(1 2 3 4) 3 (2 3 T NIL))
+                   (#(1 2 3 4 5) 30 (0 4 T T))))
+        (destructuring-bind (vec x vals) v
+          (mesg :test out " * search ~S in ~S~%" x vec)
+          (let ((v (multiple-value-list (vec-find vec x))))
+            (unless (equal vals v)
+              (incf num-err)
+              (warn "binary-search values differ:~% ** ~S~% ** ~S" vals v))))))
     (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-math num-err)
     num-err))
 

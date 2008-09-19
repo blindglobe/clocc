@@ -1,6 +1,6 @@
 ;;; bugfixes
 ;;;
-;;; Copyright (C) 1997-2004 by Sam Steingold.
+;;; Copyright (C) 1997-2008 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.23 2004/05/09 21:03:40 sds Exp $
+;;; $Id: clocc.lisp,v 1.24 2008/09/19 15:51:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -72,11 +72,6 @@
         (remf (cddr excl:arglist) :key)
         (setf (second excl:arglist)
               (map 'vector key (second excl:arglist)))))))
-
-#+clisp
-(without-package-lock ("CLOS")
-  (setq clos::*warn-if-gf-already-called* nil
-        clos::*gf-warn-on-replacing-method* nil))
 
 #+cmu
 (progn

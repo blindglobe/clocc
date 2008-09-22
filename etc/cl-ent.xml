@@ -139,6 +139,7 @@
 <!ENTITY ilisp '<ulink url="http://sourceforge.net/projects/ilisp/">ILISP</ulink>'>
 <!ENTITY slime '<ulink url="http://common-lisp.net/project/slime/">SLIME</ulink>'>
 <!ENTITY phemlock '<ulink url="http://common-lisp.net/project/phemlock/">Portable Hemlock</ulink>'>
+<!ENTITY vim '<ulink url="http://www.vim.org">VIM</ulink>'>
 
 <!-- *** platforms *** -->
 <!ENTITY acorn '<ulink url="http://www.acorn.com/"><emphasis role="platform">Acorn</emphasis></ulink>'>

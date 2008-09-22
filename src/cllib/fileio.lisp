@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.48 2008/06/16 16:02:32 sds Exp $
+;;; $Id: fileio.lisp,v 1.49 2008/09/22 19:24:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -335,11 +335,13 @@ Passes REPEAT (default NIL) keyword argument to `read-from-stream'."
   (declare (stream st) (simple-string ln))
   (with-timing (:out out :type :head)
     (mesg :head out " +++ ~S(~S)..." 'skip-to-line ln)
-    (do ((end (+ start (length ln))) (rr (read-line st) (read-line st))
-         (line 0 (1+ line)))
-        ((and (>= (length rr) end) (string-equal ln rr :start2 start :end2 end))
-         (skip-done out line 0 st)
-         (subseq rr end line))
+    (do ((end (+ start (length ln))) (line 0 (1+ line))
+         (rr (read-line st nil nil) (read-line st nil nil)))
+        ((or (null rr)
+             (and (>= (length rr) end)
+                  (string-equal ln rr :start2 start :end2 end)))
+         (skip-done out line (and rr start) st)
+         (and rr (subseq rr end)))
       (declare (type index-t end) (simple-string rr)))))
 
 (defun skip-search (stream string &key out (start 0))

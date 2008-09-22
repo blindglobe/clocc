@@ -1,10 +1,10 @@
 ;;; generate and use autoloads
 ;;;
-;;; Copyright (C) 2000-2003, 2006-2008 by Sam Steingold
+;;; Copyright (C) 2000-2008 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: autoload.lisp,v 1.17 2008/06/16 16:02:32 sds Exp $
+;;; $Id: autoload.lisp,v 1.18 2008/09/22 19:25:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/autoload.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -52,11 +52,11 @@
     (reduce #'+ in :key (lambda (i0) (autoload-stream i0 out log))))
   (:method ((in pathname) (out stream) (log t))
     (with-open-file (ins in :direction :input)
-      (format out "~&;;; file ~s, ~:d bytes~%" in (file-length ins))
-      (format log "~&~s [~:d bytes] --> " in (file-length ins)) (force-output)
-      (loop :while (ignore-errors (skip-to-line ins *autoload-cookie*))
-            :count t :into total :do
-            (let* ((*package* (find-package :cllib))
+      (format out "~&;;; file ~A, ~:D byte~:P~%" in (file-length ins))
+      (format log "~&~A [~:D byte~:P]..." in (file-length ins)) (force-output)
+      (loop :while (skip-to-line ins *autoload-cookie*)
+        :count t :into total
+        :do (let* ((*package* (find-package :cllib))
                    (form (read ins)) (name (second form))
                    (doc (case (car form)
                           ((defun defsubst)
@@ -68,8 +68,8 @@
                                           'defgeneric))))))
               (format out "(export '(~s))~%(autoload '~s ~s ~s)~%"
                       name name (pathname-name in) doc))
-            :finally (progn (format log "~d autoload~:p~%" total) (terpri out)
-                            (return total))))))
+        :finally (progn (format log "~D autoload~:P~%" total) (terpri out)
+                        (return total))))))
 
 (defun autoload-generate (in out &optional (log t))
   "Generate the autoloads, indicated by `*autoload-cookie*'."
@@ -80,7 +80,7 @@
             (timestamp) (lisp-implementation-type)
             (lisp-implementation-version) *autoload-defun*)
     (let ((tot (autoload-stream in outs log)))
-      (format log "wrote ~d autoload~:p to ~s (~:d bytes)~%"
+      (format log "~&Wrote ~D autoload~:P to ~A (~:D byte~:P)~%"
               tot out (file-length outs))
       tot)))
 

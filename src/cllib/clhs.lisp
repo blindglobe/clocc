@@ -1,10 +1,10 @@
 ;;; HyperSpec handling
 ;;;
-;;; Copyright (C) 1999-2005, 2007-2008 by Sam Steingold
+;;; Copyright (C) 1999-2008 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.11 2008/06/16 16:02:32 sds Exp $
+;;; $Id: clhs.lisp,v 3.12 2008/09/22 15:20:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -24,7 +24,8 @@
 
 (in-package :cllib)
 
-(export '(*clhs-root* *clhs-hashtable* clhs-doc clhs-write-entities))
+(export '(*clhs-root* *clhs-hashtable* clhs-doc clhs-write-entities
+          regenerate-etc-files))
 
 #+nil
 (setq gtki::*gtkd-executable* "/usr/src/clisp/cl-gtk/bin/gtkd")
@@ -33,7 +34,8 @@
 ;;;
 ;;;
 
-(defcustom *clhs-root* url (url "http://www.lisp.org/HyperSpec/")
+(defcustom *clhs-root* url
+  (url "http://www.lispworks.com/documentation/HyperSpec/")
   "The root of the HyperSpec tree.")
 
 (defcustom *clhs-root-local* pathname
@@ -58,6 +60,7 @@
 
 (defstruct clhs-version
   (name (required-argument))
+  (roots nil)
   (sym-tab (required-argument) :type string) ; file in Data/ symbol->file
   (iss-tab (required-argument) :type string) ; file in Data/ issue->file
   (any (required-argument) :type string) ; "any" file prefix: choice
@@ -74,15 +77,17 @@
 (defcustom *clhs-version-table* list
   (list (make-clhs-version
          :name :long :sym-tab "Symbol-Table.text" :any "any"
+         :roots (list (url "http://www.ai.mit.edu/projects/iiip/doc/CommonLISP/HyperSpec/") (url "http://www.cs.cmu.edu/afs/cs/project/ai-repository/ai/html/hyperspec/HyperSpec/"))
          :iss-tab "Issue-Cross-Refs.text"
          :doc "stagenfun_doc_umentationcp.html"
          :fun '("acc" "fun" "locfun" "stagenfun")
          :spe '("sym" "spefor" "speope") :mac '("locmac" "mac")
          :typ '("cla" "contyp" "syscla" "typ" "typspe")
-         :var '( "convar" "var") :dec '("dec") :res '("res") :glo '("glo"))
+         :var '("convar" "var") :dec '("dec") :res '("res") :glo '("glo"))
         (make-clhs-version
          :name :short :sym-tab "Map_Sym.txt" :any "a" :iss-tab "Map_IssX.txt"
-         :doc "f_docume.htm" :fun '("f") :mac '("m") :spe '( "s")
+         :roots (list (url "http://www.lispworks.com/documentation/HyperSpec/"))
+         :doc "f_docume.htm" :fun '("f") :mac '("m") :spe '("s")
          :typ '("t" "e") :var '("v") :dec '("d") :res '("r") :glo '("26")))
   "*The list of known CLHS versions.")
 
@@ -127,34 +132,37 @@
 (defcustom *clhs-hashtable* (or null hash-table) nil
   "The hashtable for the CL symbols.")
 
-(defun clhs-init (&key (root *clhs-root*) (err *error-output*))
-  "Set `*clhs-alist*', `*clhs-hashtable*' and `*clhs-version*' from ROOT."
-  ;; make sure root ends with "/"
-  (unless (char= #\/ (aref (url-path root) (1- (length (url-path root)))))
-    (setf (url-path root) (concatenate 'string (url-path root) "/")))
+(defun clhs-init (&key ((:root *clhs-root*) *clhs-root*) (err *error-output*))
+  "Set *CLHS-ALIST*, *CLHS-HASHTABLE* and *CLHS-VERSION* from *CLHS-ROOT*."
+  ;; make sure *clhs-root* ends with "/"
+  (unless (char= #\/ (aref (url-path *clhs-root*)
+                           (1- (length (url-path *clhs-root*)))))
+    (setf (url-path *clhs-root*)
+          (concatenate 'string (url-path *clhs-root*) "/")))
   (dolist (ver *clhs-version-table*)
     ;; check all versions one by one
-    (let ((old-path (url-path root)))
-      (setf (url-path root)
+    (let ((old-path (url-path *clhs-root*)))
+      (setf (url-path *clhs-root*)
             (concatenate 'string old-path "Data/" (clhs-version-sym-tab ver)))
-      (mesg :log err "~& *** ~s~%" root)
-      (unwind-protect           ; restore the PATH of ROOT
+      (mesg :log err "~& *** ~s~%" *clhs-root*)
+      (unwind-protect           ; restore the PATH of *CLHS-ROOT*
            (handler-case        ; ignore file opening errors
-               (with-open-url (map root :err err)
-                 (case (url-prot root) ((:http :www) (flush-http map)))
+               (with-open-url (map *clhs-root* :err err)
+                 (case (url-prot *clhs-root*) ((:http :www) (flush-http map)))
                  (setf *clhs-version* ver
-                       *clhs-alist* (clhs-read-map map root old-path ver err))
+                       *clhs-alist* (clhs-read-map map *clhs-root*
+                                                   old-path ver err))
                  (mesg :log err "~&read ~:d symbol~:p" (length *clhs-alist*))
-                 (setf (url-path root)
+                 (setf (url-path *clhs-root*)
                        (concatenate 'string old-path "Data/"
                                     (clhs-version-iss-tab ver))
-                       *clhs-issues* (clhs-read-issues root err))
+                       *clhs-issues* (clhs-read-issues *clhs-root* err))
                  (mesg :log err "~&read ~:d issue~:p" (length *clhs-issues*))
                  (return *clhs-version*))
              ((or code login net-path file-error) (co)
                ;; ignore the file opening errors
-               (mesg :log err "~s: failed: ~a" root co)))
-        (setf (url-path root) old-path))))
+               (mesg :log err "~s: failed: ~a" *clhs-root* co)))
+        (setf (url-path *clhs-root*) old-path))))
   (mesg :log err "~&filling up ~s~%" '*clhs-hashtable*)
   (setq *clhs-hashtable* (make-hash-table :test #'equal :size 1000))
   (dolist (el *clhs-alist*)
@@ -229,15 +237,17 @@
      out "<!ENTITY ~a '<ulink url=\"&clhs;/Body/~a\"><~a>~a</~a></ulink>'>~%"
      ent html font xml-name font)))
 
-(defun clhs-write-entities (file)
+(defun clhs-write-entities (file &key ((:root *clhs-root*) *clhs-root*) force)
   "Write the CLHS entities into the file."
-  (unless *clhs-alist* (clhs-init))
+  (when (or force (null *clhs-alist*)) (clhs-init))
   (with-timing ()
     (with-open-file (str file :direction :output :if-exists :supersede)
       (format t "~s: writing ~s..." 'clhs-write-entities file)
       (force-output)
       (format str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>~%
-<!-- generated by `~s' -->~2%" 'clhs-write-entities)
+<!-- generated by `~S' for ~S (~A) -->~2%"
+              'clhs-write-entities *clhs-root*
+              (clhs-version-name *clhs-version*))
       (let ((count-e 0) (count-i 0))
         (dolist (el *clhs-alist*)
           (dolist (html (cdr el))
@@ -254,19 +264,32 @@
         (format t "done [~:d entit~:@p, ~:d issue~:p] [~:d byte~:p]"
                 count-e count-i (file-length str))))))
 
-(defun clhs-doc (symb &key (out *standard-output*) (root *clhs-root*))
+(defun clhs-doc (symb &key (out *standard-output*) force
+                 ((:root *clhs-root*) *clhs-root*))
   "Dump the CLHS doc for the symbol."
   (declare (type (or symbol string) symb) (stream out))
-  (unless *clhs-hashtable* (clhs-init))
+  (when (or force (null *clhs-hashtable*)) (clhs-init))
   (let* ((sy (etypecase symb
                (symbol (symbol-name symb))
                (string (string-upcase symb))))
          (pa (gethash sy *clhs-hashtable*))
-         (url (copy-url root)))
+         (url (copy-url *clhs-root*)))
     (assert pa () "No HyperSpec doc for `~s'" sy)
     (dolist (pp pa)
-      (setf (url-path url) (concatenate 'string (url-path root) "Body/" pp))
+      (setf (url-path url)
+            (concatenate 'string (url-path *clhs-root*) "Body/" pp))
       (dump-url url :fmt "~*~a~%" :out out :proc #'html-translate-specials))))
+
+(defun regenerate-etc-files ()
+  (dolist (cv *clhs-version-table*)
+    (clhs-write-entities
+     (translate-logical-pathname
+      (concatenate 'string  "clocc:etc;clhs-ent-"
+                   (string-downcase (clhs-version-name cv))
+                   ".xml"))
+     :root (or (car (clhs-version-roots cv))
+               (error "~S: no roots for ~S" 'regenerate-etc-files cv))
+     :force t)))
 
 #||
  (defun hw ()

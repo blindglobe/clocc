@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.30 2008/06/16 16:02:32 sds Exp $
+;;; $Id: cvs.lisp,v 2.31 2008/09/22 19:24:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -146,13 +146,16 @@ Suitable for `read-list-from-stream'."
     (let* ((rcs (from-colon (read-line in)))
            (work (from-colon (read-line in)))
            (head (from-colon (read-line in)))
-           (tot-rev-l (skip-to-line in "total revisions:"))
+           (tot-rev-l (or (skip-to-line in #1="total revisions:")
+                          (error "~S: ~S not found" 'cvs-read-file #1#)))
            (p0 (position #\; tot-rev-l :test #'char=))
            (p1 (position #\: tot-rev-l :test #'char= :from-end t))
            (tot-rev (parse-integer tot-rev-l :end p0))
            (sel-rev (parse-integer tot-rev-l :start (1+ p1)))
-           (revs (progn (skip-to-line in *cvs-log-sep-1*)
-                        (read-list-from-stream in #'cvs-read-change)))
+           (revs (if (skip-to-line in *cvs-log-sep-1*)
+                     (read-list-from-stream in #'cvs-read-change)
+                     (error "~S: ~S not found" 'cvs-read-file
+                            '*cvs-log-sep-1*)))
            (path (merge-pathnames (pathname-ensure-name work)
                                   (directory-namestring in))))
       (unless (= tot-rev sel-rev)

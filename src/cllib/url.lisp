@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.66 2008/09/23 19:21:46 sds Exp $
+;;; $Id: url.lisp,v 2.67 2008/09/24 16:46:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -509,7 +509,7 @@ Connection:          #sec14.10
                                     (if (zerop (length (url-path url)))
                                         "/" (url-path url))))
                         (format nil "User-Agent: ~a" *url-user-agent*)
-                        (format nil "Host: ~a" (url-host url))
+                        (format nil "Host: ~a:~d" (url-host url) (url-port url))
                         "Accept: */*" "Connection: close"
                         (and (first *http-proxy*)
                              (list

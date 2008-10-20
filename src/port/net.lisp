@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.63 2008/07/30 17:56:35 sds Exp $
+;;; $Id: net.lisp,v 1.64 2008/10/20 19:54:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -24,7 +24,7 @@
 (in-package :port)
 
 (export
- '(resolve-host-ipaddr ipaddr-to-dotted dotted-to-ipaddr
+ '(resolve-host-ipaddr ipaddr-to-dotted dotted-to-ipaddr ipaddr-closure
    hostent hostent-name hostent-aliases hostent-addr-list hostent-addr-type
    socket open-socket socket-host/port socket-string socket-server
    set-socket-stream-format
@@ -175,6 +175,21 @@
   #-(or allegro (and clisp syscalls) cmu gcl lispworks openmcl
         (and sbcl (or db-sockets net.sbcl.sockets sb-bsd-sockets)) scl)
   (error 'not-implemented :proc (list 'resolve-host-ipaddr host)))
+
+(defun ipaddr-closure (address)
+  "Resolve all addresses and names associated with the argument."
+  (let ((a2he (make-hash-table :test 'equalp))
+        (he2a (make-hash-table :test 'equalp)))
+    (labels ((handle (s)
+               (unless (gethash s a2he)
+                 (let ((he (resolve-host-ipaddr s)))
+                   (setf (gethash s a2he) he)
+                   (push s (gethash he he2a))
+                   (handle (hostent-name he))
+                   (mapc #'handle (hostent-aliases he))
+                   (mapc #'handle (hostent-addr-list he))))))
+      (handle address))
+    (values he2a a2he)))
 
 ;;;
 ;;; }}}{{{ sockets

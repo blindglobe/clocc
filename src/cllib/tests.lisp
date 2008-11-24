@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.49 2008/09/19 17:51:34 sds Exp $
+;;; $Id: tests.lisp,v 2.50 2008/11/24 18:28:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -25,6 +25,7 @@
   (require :cllib-xml (translate-logical-pathname "cllib:xml"))
   (require :cllib-iter (translate-logical-pathname "cllib:iter"))
   (require :cllib-munkres (translate-logical-pathname "cllib:munkres"))
+  (require :cllib-lift (translate-logical-pathname "cllib:lift"))
   (require :cllib-cvs (translate-logical-pathname "cllib:cvs")))
 
 (in-package :cllib)
@@ -426,9 +427,19 @@
     (mesg :test out "~& ** ~S: ~:D error~:P~%" 'test-list num-err)
     num-err))
 
+(defun test-lift (&key (out *standard-output*))
+  (let ((num-err 0))
+    (let* ((lq (lift:lift-quality #(1 1 0 0 1 0 0 1 0 0) :out out
+                                  :true-value #'plusp))
+           (q (lift:lq-lift-quality lq)))
+      (mesg :test out " ** lift-quality=~S~%" q)
+      (unless (= 0.5 q) (incf num-err)))
+    (mesg :test out "~& ** ~S: ~:D error~:P~%" 'test-lift num-err)
+    num-err))
+
 (defun test-all (&key (out *standard-output*)
                  (what '(string math date rpm url elisp xml munkres cvs base64
-                         iter matrix list))
+                         iter matrix list lift))
                  (disable-network-dependent-tests t))
   (mesg :test out "~& *** ~s: regression testing...~%" 'test-all)
   (let* ((num-test 0)

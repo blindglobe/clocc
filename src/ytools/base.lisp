@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools -*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 2.6 2007/08/28 12:17:19 airfoyle Exp $
+;;;$Id: base.lisp,v 2.7 2008/11/25 20:03:28 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -29,7 +29,7 @@
              Symbol-name Symbol-plist Symbol-function Symbol-value
 	     is-Keyword is-String memq assq nodup =< retain-if
 	     is-Pair is-cons list-copy is-list
-	     tuple pair head tail nthrest nthtail endtail left right
+	     tuple tuple. pair head tail nthrest nthtail endtail left right
 	     ;;;; one two three four five six seven eight nine ten
 	     is-Char is-Integer is-Number
 	     is-Float is-Single-float is-Double-float
@@ -183,7 +183,7 @@
 	  (\\ (entry fcn)
 	     (let ((rte (assoc rt (cddr entry) :test #'eq)))
 		(cond ((not rte)
-		       (setq rte (tuple rt nil))
+		       (setq rte (list rt nil))
 		       (setf (cddr entry) (cons rte (cddr entry)))))
 		(setf (cadr rte) fcn))))))
 
@@ -376,6 +376,7 @@
 
 (subr-synonym tuple list)
 (subr-synonym pair cons)
+(subr-synonym tuple. list*)
 
 ;;; For decomposing lists
 (subr-synonym head car t)

@@ -1,6 +1,9 @@
-$Id: CHANGELOG,v 2.41 2007/11/29 14:51:39 airfoyle Exp $
+$Id: CHANGELOG,v 2.42 2008/11/25 20:03:28 airfoyle Exp $
             
-            [- Version 2.1.41 -]
+            [- Version 2.1.42 -]
+2008-11-25: Defined 'tuple.' as synonym for 'list*'.
+
+            [- Version 2.1.41 2007/11/29 14:51:39 airfoyle Exp -]
 2007-11-29: Moved 'print-innards' from chunk.lisp to util.lisp.
 
             [- Version 2.1.40 2007/08/28 18:14:57 airfoyle Exp -]

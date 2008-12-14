@@ -1,7 +1,11 @@
-$Id: CHANGELOG,v 2.42 2008/11/25 20:03:28 airfoyle Exp $
+$Id: CHANGELOG,v 2.43 2008/12/14 23:46:55 airfoyle Exp $
             
-            [- Version 2.1.42 -]
-2008-11-25: Defined 'tuple.' as synonym for 'list*'.
+            [- Version 2.1.43 -]
+2008-12-14: base.lisp: Defined 'is-even' and 'is-odd' as synonyms for
+              'evenp' and 'oddp'.
+
+            [- Version 2.1.42 2008/11/25 20:03:28 airfoyle Exp -]
+2008-11-25: base.lisp: Defined 'tuple.' as synonym for 'list*'.
 
             [- Version 2.1.41 2007/11/29 14:51:39 airfoyle Exp -]
 2007-11-29: Moved 'print-innards' from chunk.lisp to util.lisp.

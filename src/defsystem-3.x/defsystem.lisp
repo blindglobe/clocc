@@ -1012,7 +1012,7 @@
 
 #+:lispworks
 (defpackage "MAKE" (:nicknames "MK") (:use "COMMON-LISP")
-	    (:import-from system *modules* provide require)
+	    (:import-from "SYSTEM" *modules* provide require)
 	    (:export "DEFSYSTEM" "COMPILE-SYSTEM" "LOAD-SYSTEM"
 		     "DEFINE-LANGUAGE" "*MULTIPLE-LISP-SUPPORT*"))
 
@@ -1194,7 +1194,7 @@
 ;;; ********************************
 ;;; Defsystem Version **************
 ;;; ********************************
-(defparameter *defsystem-version* "3.6 Interim, 2005-09-01"
+(defparameter *defsystem-version* "3.6 Interim, 2008-12-18"
   "Current version number/date for MK:DEFSYSTEM.")
 
 
@@ -4258,6 +4258,13 @@ used with caution.")
 		    (version *version*))
   ;; If the pathname is present, this behaves like the old require.
   (unless (and module-name
+	       ;; madhu: Allegro cannot coerce pathnames to strings
+	       ;; via (string #p"foo") and module-name turns out to be
+	       ;; a pathname when REQUIRE is used internally to load
+	       ;; internal modules.
+	       #+allegro
+	       (and (pathnamep module-name)
+		    (setq module-name (namestring module-name)))
 	       (find (string module-name)
 		     *modules* :test #'string=))
     (handler-case
@@ -4291,6 +4298,9 @@ used with caution.")
 	       ||#
 	       (error 'missing-system :name module-name)))
       (missing-module (mmc) (signal mmc)) ; Resignal.
+      ;; madhu 080902 a missing-system is incorrectly signalled when
+      ;; mk:oos throws an error.
+      #+nil
       (error (e)
              (declare (ignore e))
 	     ;; Signal a (maybe wrong) MISSING-SYSTEM.

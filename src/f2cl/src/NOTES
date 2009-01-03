@@ -1,6 +1,15 @@
 -*- Mode: text -*-
 
 Changes:
+Jan 2009
+--------
+o IMPLICIT REAL*8 was not properly handled and treated everything
+  incorrectly as single-float.
+o The handling of ENTRY functions sometimes left undefined variables
+  in the generated code.  This is fixed now.
+o Implied-do loops with a step value did not correctly handle the
+  step, treating the step as a function call.
+
 August 2008
 ------------
 o Added :common-block-file option to F2CL and F2CL-COMPILE.  When set,

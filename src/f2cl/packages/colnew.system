@@ -1,0 +1,75 @@
+;;; -*- Mode: lisp; Package: CL-USER -*-
+
+
+;;; Defsystem for COLNEW.  Everything should compile, but the result
+;;; is untested.
+(in-package #:cl-user)
+
+(mk:define-language :f2cl
+    :compiler #'f2cl:f2cl-compile
+    :source-extension "f")
+
+(defparameter *colnew-root*
+  (make-pathname :host (pathname-host *load-pathname*)
+		 :directory (pathname-directory *load-pathname*)))
+
+;; Defsystem for quadpack.
+(mk:defsystem colnew
+  :source-pathname *colnew-root*
+  :components
+  ((:module colnew
+	    :source-extension "f"
+	    :language :f2cl
+	    :compiler-options (:common-as-array t)
+	    :components
+	    (
+	     ;; Linpack routines needed by colnew
+	     (:file "dgesl")
+	     (:file "dgefa")
+	     ;; BLAS routines needed by above
+	     (:file "daxpy")
+	     (:file "ddot")
+	     (:file "dscal")
+	     (:file "idamax")
+	     ;; Simple compatibility to define DFLOAT and to define
+	     ;; all of the needed common blocks in one place.
+	     (:file "compat"
+		    :compiler-options (:declare-common t :common-as-array t))
+	     ;; COLNEW itself, broken down into one subroutine per
+	     ;; file.
+	     (:file "colnew"
+		    :depends-on ("compat" "consts" "newmsh" "contrl"))
+	     (:file "contrl"
+		    :depends-on ("compat" "lsyslv" "skale" "errchk" "newmsh"))
+	     (:file "skale"
+		    :depends-on ("compat"))
+	     (:file "newmsh"
+		    :depends-on ("compat" "approx" "horder"))
+	     (:file "consts"
+		    :depends-on ("compat" "vmonde" "rkbas"))
+	     (:file "errchk")
+	     (:file "lsyslv"
+		    :depends-on ("compat" "vwblok" "gblock" "gderiv" "fcblok"
+					  "sbblok" "dmzsol"))
+	     (:file "gderiv")
+	     (:file "vwblok"
+		    :depends-on ("compat" "dgesl" "dgefa"))
+	     (:file "gblock"
+		    :depends-on ("compat" "dgesl"))
+	     (:file "appsln")
+	     (:file "approx"
+		    :depends-on ("compat"))
+	     (:file "rkbas"
+		    :depends-on ("compat"))
+	     (:file "vmonde"
+		    :depends-on ("compat"))
+	     (:file "horder")
+	     (:file "dmzsol"
+		    :depends-on ("factrb" "shiftb"))
+	     (:file "fcblok")
+	     (:file "factrb")
+	     (:file "shiftb")
+	     (:file "sbblok"
+		    :depends-on ("subfor" "subbak"))
+	     (:file "subfor")
+	     (:file "subbak")))))

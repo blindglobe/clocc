@@ -95,3 +95,4 @@ undefexa.lisp
 user_eval.lisp
 weaponas
 weaponas.lisp
+*.sse2f

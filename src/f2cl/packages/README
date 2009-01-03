@@ -38,3 +38,6 @@ toms		Tranactions on Mathematical Software
 		Models.
 
  419		Algorithm 419:  cpoly
+
+colnew		COLNEW package from netlib for solving boundary-value 
+		ODEs. Currently untested, but it does compile.

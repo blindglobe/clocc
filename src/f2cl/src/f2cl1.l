@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.209 2008/09/11 14:59:55 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.210 2009/01/03 00:48:57 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1714,7 +1714,7 @@ FILENAME                 File containing Fortran code
 		      ,@(cddddr x))
 		    x)))
 	   (mapc #'(lambda (y)
-		     (push `(,(car (convert-data-type y))
+		     (push `(,(car (convert-data-type (car y)))
 			     ,@(list-split '|,|
 					   (remove '- (car (last y)))))
 			   *implicit_vble_decls*))
@@ -3175,8 +3175,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.209 2008/09/11 14:59:55 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.210 2009/01/03 00:48:57 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.210  2009/01/03 00:48:57  rtoy
+;;; PARSE-IMPLICIT-DECL was not correctly handling
+;;;
+;;; IMPLICIT REAL*8 (A-H, O-Z)
+;;;
+;;; It was incorrectly calling CONVERT-DATA-TYPE.
+;;;
 ;;; Revision 1.209  2008/09/11 14:59:55  rtoy
 ;;; o Add comment that some Fortran compilers allow $ as a valid
 ;;;   character.

@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.197 2008/09/11 15:03:25 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.198 2009/01/03 00:51:28 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -1010,7 +1010,7 @@
 	    (mapcar #'(lambda (x)
 			(let ((vlist (make-vars n-returns)))
 			  (incf count)
-			  `(defun ,(first x) ,@(rest x)
+			  `(defun ,(first x) ,@(butlast (rest x))
 			    (multiple-value-bind ,vlist
 				(,entry ',(first x) ,@(second x))
 			      (values ,@vlist)))))
@@ -3214,7 +3214,9 @@
 	   ivar (first (first ctrl-vars))
 	   e1 (id-expression (cdr (member '= (first ctrl-vars))))
 	   e2 (id-expression (second ctrl-vars))
-	   e3 (if (third ctrl-vars) (third ctrl-vars) 1))
+	   e3 (if (third ctrl-vars)
+		  (id-expression (third ctrl-vars))
+		  1))
      (return
        (if *dlist-flag*
 	   `(do ((,ivar ,e1 (+ ,ivar ,e3))
@@ -3845,8 +3847,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.197 2008/09/11 15:03:25 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.198 2009/01/03 00:51:28 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.198  2009/01/03 00:51:28  rtoy
+;;; o ENTRY-FUNCTIONS was leaving junk in the first part of the function.
+;;;   The parent subprogram name was left as the first statement of the
+;;;   function.  This causes compilation errors since it's usually an
+;;;   undefined variable.
+;;;
+;;; o PARSE-IMPLIED-DO did not call ID-EXPRESSION on the optional step
+;;;   argument for the implied-do loop.
+;;;
 ;;; Revision 1.197  2008/09/11 15:03:25  rtoy
 ;;; o Need a few more special cases where we don't want to mangle the
 ;;;   symbol name.

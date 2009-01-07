@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.210 2009/01/03 00:48:57 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.211 2009/01/07 17:28:19 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -47,6 +47,7 @@
     sinh dsinh cosh dcosh tanh dtanh
     zsqrt
     cdabs dconjg
+    dfloat
     )
   "A list of all the intrinsic functions in Fortran 77")
 
@@ -3175,8 +3176,20 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.210 2009/01/03 00:48:57 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.211 2009/01/07 17:28:19 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.211  2009/01/07 17:28:19  rtoy
+;;; f2cl0.l:
+;;; o Export new dfloat function, an alias for dble.
+;;; o Merge some cleanups from Maxima.
+;;;
+;;; f2cl1.l:
+;;; o Add dfloat to list of intrinsic functions.
+;;;
+;;; macros.l:
+;;; o Merge some cleanups and fixes from Maxima.  Mostly for gcl and ecl.
+;;; o Add implementation of dfloat.
+;;;
 ;;; Revision 1.210  2009/01/03 00:48:57  rtoy
 ;;; PARSE-IMPLICIT-DECL was not correctly handling
 ;;;

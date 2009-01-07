@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.109 2009/01/07 21:34:41 rtoy Exp $")
+  "$Id: macros.l,v 1.110 2009/01/07 21:42:45 rtoy Exp $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -326,7 +326,9 @@ is not included")
     ,@(computed-goto-aux tag-lst)))
 
 ;; macro for a lisp equivalent of Fortran assigned GOTOs
-(eval-when (:load-toplevel :compile-toplevel :execute)
+(eval-when
+    #+gcl (compile load eval)
+    #-gcl (:load-toplevel :compile-toplevel :execute)
 (defun make-label (n) 
   (read-from-string (concatenate 'string (symbol-name :label) (princ-to-string n))))
 
@@ -1455,8 +1457,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.109 2009/01/07 21:34:41 rtoy Exp $
+;;; $Id: macros.l,v 1.110 2009/01/07 21:42:45 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.110  2009/01/07 21:42:45  rtoy
+;;; Gcl doesn't recognize :compile-toplevel and friends.  Use old style.
+;;;
 ;;; Revision 1.109  2009/01/07 21:34:41  rtoy
 ;;; Clean up junk:
 ;;;

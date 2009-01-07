@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.198 2009/01/03 00:51:28 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.199 2009/01/07 19:16:59 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -3831,24 +3831,29 @@
 	 (let* ((init (make-common-block-var-init val comm-decls))
 		(new-keys (remove-unused-key-params key-params init))
 		(new-decls (make-key-param-decls new-keys)))
-	   (push `(let* ,new-keys
-		    ,@new-decls
-		    (defparameter ,(intern (concatenate 'string
-							"*"
-							(symbol-name key)
-							(symbol-name '#:-common-block*)))
-		      (,(intern (concatenate 'string
-					     (symbol-name '#:make-)
-					     (symbol-name key)))
-			,@init)))
+	   (push `(defparameter ,(intern (concatenate 'string
+						      "*"
+						      (symbol-name key)
+						      (symbol-name '#:-common-block*)))
+		   (let* ,new-keys
+		     ,@new-decls
+		     (,(intern (concatenate 'string
+					    (symbol-name '#:make-)
+					    (symbol-name key)))
+		       ,@init)))
 		 var-inits)))
      comm-blocks)
     (nreverse var-inits)))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.198 2009/01/03 00:51:28 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.199 2009/01/07 19:16:59 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.199  2009/01/07 19:16:59  rtoy
+;;; Minor change on how common blocks are initialized.  We want to make
+;;; the DEFPARAMETER a top-level form so the compile-time side-effects
+;;; happen.
+;;;
 ;;; Revision 1.198  2009/01/03 00:51:28  rtoy
 ;;; o ENTRY-FUNCTIONS was leaving junk in the first part of the function.
 ;;;   The parent subprogram name was left as the first statement of the

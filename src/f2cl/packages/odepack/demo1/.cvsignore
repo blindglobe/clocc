@@ -1,3 +1,4 @@
+*.sse2f
 edit2.lisp
 f1.lisp
 f2.lisp

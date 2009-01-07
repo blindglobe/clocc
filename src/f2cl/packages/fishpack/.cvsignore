@@ -1,5 +1,6 @@
 *.lisp
 *.ppcf
+*.sse2f
 tsthstcsp
 tsthstcyl
 tsthstplr

@@ -1,4 +1,5 @@
 *.lisp
 *.ppcf
+*.sse2f
 tsthwscsp
 tsthwscyl

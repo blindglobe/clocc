@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.110 2009/01/07 21:42:45 rtoy Exp $")
+  "$Id: macros.l,v 1.111 2009/01/07 21:50:16 rtoy Exp $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -430,9 +430,9 @@ is not included")
 ;; This assumes that we in round-to-nearest mode (the default).
 ;;
 ;; These only work if you have IEEE FP arithmetic.  There are 2
-;; versions given below.  One is for non-x86, which assumes that
+;; versions given below.  One is for non-x87, which assumes that
 ;; single and double FP numbers are properly rounded after each
-;; operation.  The version for x86 stores away a value to make sure
+;; operation.  The version for x87 stores away a value to make sure
 ;; the rounding happens correctly.
 ;;
 ;; Finally, the last version if for platforms where none of this
@@ -443,7 +443,7 @@ is not included")
 ;; of 2!) when computing pi to 29593 digits or os.
 
 (declaim (inline rint-s rint-d))
-#+(and cmu (not x86))
+#+(and cmu (or :sse2 (not x86)))
 (progn
 (defun rint-s (x)
   (declare (single-float x))
@@ -460,7 +460,7 @@ is not included")
 	(- (+ x const) const))))
 )
 
-#+(and cmu x86)
+#+(and cmu (and x86 x87))
 (progn
 (defun rint-s (x)
   (declare (single-float x))
@@ -1457,8 +1457,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.110 2009/01/07 21:42:45 rtoy Exp $
+;;; $Id: macros.l,v 1.111 2009/01/07 21:50:16 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.111  2009/01/07 21:50:16  rtoy
+;;; Use the fast rint-* functions for CMUCL with sse2 support.
+;;;
 ;;; Revision 1.110  2009/01/07 21:42:45  rtoy
 ;;; Gcl doesn't recognize :compile-toplevel and friends.  Use old style.
 ;;;

@@ -6,47 +6,13 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.108 2009/01/07 17:28:19 rtoy Exp $")
-
-;; macros:
-;;	rexpt
-;;	fexport
-;;	fproclaim
-;;	fuse-package 
-;;	fin-package
-;;	map-defvar
-;;	do1 
-;;	do!
-;;	double-cdr
-;;	putproperty
-;;	defprop
-;;	array-cl
-;;	store-cl
-;;	apply!
-
-;;	rfref
-;;	rfset
-;;	fref
-;;	fset
-
-;;	while
-;;       fdo
-;;	reset-vble - a defun
-;;       arithmetic-if
-;;	computed-goto
-;;	assigned-goto
-;;	eqv
-;;	constant-list
-;;----------------------------------------------------------------------------
+  "$Id: macros.l,v 1.109 2009/01/07 21:34:41 rtoy Exp $")
 
 (eval-when
     #+gcl (compile load eval)
     #-gcl (:compile-toplevel :load-toplevel :execute)
     (proclaim '(special *verbose*)))
 ;;----------------------------------------------------------------------------
-#+aclpc (defmacro rexpt (x y) `(realpart (expt ,x ,y)))
-#-aclpc (defmacro rexpt (x y) `(expt ,x ,y))
-
 (defvar *check-array-bounds* nil
   "If non-NIL, generated code checks for array bounds.  If NIL, checking
 is not included")
@@ -209,19 +175,6 @@ is not included")
 ;;
 ;; This is done by making a displaced array to VNAME with the
 ;; appropriate offset.
-#+nil
-(defmacro array-slice (vname type indices bounds)
-  (let ((dims `(* ,@(mapcar #'(lambda (idx bnd)
-				(if (and (numberp idx)
-					 (numberp (second bnd)))
-				    (+ (- (second bnd) idx) 1)
-				    `(+ (- ,(second bnd) ,idx) 1)))
-			    indices bounds))))
-    `(make-array ,dims
-      :element-type ',type
-      :displaced-to ,vname
-      :displaced-index-offset ,(col-major-index indices bounds))))
-
 (defmacro array-slice (vname type indices bounds)
   ;; To figure the size of the sliced array, use ARRAY-TOTAL-SIZE
   ;; instead of the f2cl derived/declared BOUNDS, just in case we
@@ -248,11 +201,6 @@ is not included")
     :element-type ',type
     :displaced-to ,vname
     :displaced-index-offset (min (array-total-size ,vname) ,(col-major-index indices bounds))))
-
-#+nil
-(defmacro array-slice (vname type indices bounds)
-  (declare (ignore type indices bounds))
-  vname)
 
 ;; Compute an initializer for make-array given the data in the list
 ;; DATA.  The array has en element type of TYPE and has dimensions of
@@ -312,38 +260,6 @@ is not included")
 			  `((setq ,loop-var (the integer4 ,(third do_vble_clause))
 			     ,iteration_count (the integer4 (1- ,iteration_count)))))
 		  '((go loop)))))))))
-
-;;(defmacro fdo (do-vbles predicate-clause &rest body)
-;;   `(prog nil
-;;          (setq ,(caar do-vbles) ,(cadar do-vbles)) 
-;;          loop
-;;          (return
-;;          (cond ,(reset-vble predicate-clause)
-;;                ,(cons 't 
-;;                       (append 
-;;                        (append body `((setq ,(caar do-vbles) ,(caddar do-vbles))))
-;;                        '((go loop))))))))
-;;(defmacro fdo (do-vbles predicate-clause &rest body)
-;;   `(prog (iteration-count)
-;;          ,(append '(psetq) 
-;;                   (do ((do-vars do-vbles (cdr do-vars))
-;;                        (ret nil (append ret (list (caar do-vars) (cadar do-vars)))))
-;;                       ((null do-vars) ret)))
-;;          loop
-;;          (return
-;;          (cond ,predicate-clause
-;;                ,(cons 't 
-;;                       (append 
-;;                        (append body
-;;                                (list
-;;                                (append '(psetq)
-;;                                (do ((do-vars do-vbles (cdr do-vars))
-;;                                     (ret nil (append ret (if (null (caddar do-vars)) 
-;;                                                              nil 
-;;                                                              (list (caar do-vars) 
-;;                                                                    (caddar do-vars))))))
-;;                                    ((null do-vars) ret)))))
-;;                        '((go loop))))))))
 
 ;;----------------------------------------------------------------------------
 ;; macro for division 
@@ -410,15 +326,6 @@ is not included")
     ,@(computed-goto-aux tag-lst)))
 
 ;; macro for a lisp equivalent of Fortran assigned GOTOs
-#+nil
-(defmacro assigned-goto (i &optional tag-lst)
-   `(if ,tag-lst
-        (if (member ,i ,tag-lst) 
-            (go ,i)
-            (error "bad statement number in assigned goto"))
-        (go ,i)))
-
-
 (eval-when (:load-toplevel :compile-toplevel :execute)
 (defun make-label (n) 
   (read-from-string (concatenate 'string (symbol-name :label) (princ-to-string n))))
@@ -434,6 +341,7 @@ is not included")
 )
 
 
+;; macro for a lisp equivalent of Fortran assigned GOTOs
 (defmacro assigned-goto (var tag-list)
   `(case ,var
      ,@(assigned-goto-aux tag-list)))
@@ -517,7 +425,6 @@ is not included")
 ;;     return (r-X)+X;
 ;; }
 ;;
-;; We modified this to do truncation instead of directed rounding.
 ;; This assumes that we in round-to-nearest mode (the default).
 ;;
 ;; These only work if you have IEEE FP arithmetic.  There are 2
@@ -985,46 +892,6 @@ is not included")
 (defun ffloat (x)
   (coerce x 'single-float))
 
-#+nil
-(defun process-implied-do (ido low-bnds init)
-  (let* ((implied-do (remove '|,| ido))
-	 (array (first implied-do))
-	 (do-var (elt implied-do (1- (position '= implied-do))))
-	 (limits (rest (member '= implied-do)))
-	 (start (first limits))
-	 (end (second limits))
-	 (step (if (>= (length limits) 3)
-		   (third limits)
-		   1)))
-    (cond ((atom array)
-	   `(do ((,do-var ,start (+ ,do-var ,step)))
-	     ((> ,do-var ,end))
-	     (declare (type integer4 ,do-var))
-	     (fset (fref ,array ,(remove '|,| (second implied-do)) ,low-bnds) (pop ,init))))
-	  (t
-	   `(do ((,do-var ,start (+ ,do-var ,step)))
-	     ((> ,do-var ,end))
-	     (declare (type integer4 ,do-var))
-	     ,(process-implied-do (remove '|,| array) low-bnds init))))))
-
-(defun process-implied-do (ido array-bnds var-types init)
-  (destructuring-bind (data-vars (index-var start end &optional step))
-      ido
-    (labels
-	((convert-type (type)
-	   (if (eq type 'integer4)
-	       `(truncate (pop ,init))
-	       `(coerce (pop ,init) ',type)))
-	 (map-vars (v)
-	   (mapcar #'(lambda (x b vt)
-		       `(fset (fref ,(first x) ,(second x) ,b)
-			 ,(convert-type vt)))
-		   v array-bnds var-types)))
-    `(do ((,index-var ,start (+ ,index-var ,(or step 1))))
-         ((> ,index-var ,end))
-       ,@(map-vars data-vars))
-    )))
-
 (defun process-implied-do (ido array-bnds var-types init)
   (destructuring-bind (data-vars &rest looping)
       ido
@@ -1054,7 +921,7 @@ is not included")
     `(let ((,v (list ,@vals)))
       ,(process-implied-do implied-do array-bnds var-types v))))
 
-;;-----------------------------------------------------------------------------  ; end of macros.l
+;;-----------------------------------------------------------------------------
    
 ;; Map Fortran logical unit numbers to Lisp streams
 
@@ -1065,16 +932,6 @@ is not included")
 #+gcl
 (defvar *lun-hash*
   (make-hash-table))
-
-#+nil
-(defun lun->stream (lun)
-  (let ((stream (gethash lun *lun-hash*)))
-    (if stream
-	stream
-	(setf (gethash lun *lun-hash*)
-	      (open (format nil "fort~d.dat" lun)
-		    :direction :output
-		    :if-exists :rename)))))
 
 (defun lun->stream (lun &optional readp)
   (let ((stream (gethash lun *lun-hash*)))
@@ -1388,45 +1245,6 @@ causing all pending operations to be flushed"
        (execute-format t stream format-list arg-list)))))
 
 
-#||
-(defmacro fformat1 (dest directive arg)
-  (let ((val (gensym)))
-    `(let ((,val ,arg))
-      (cond ((and (arrayp ,val)
-		  (not (stringp ,val)))
-	     (dotimes (k (array-total-size ,val))
-	       (format ,dest ,directive (row-major-aref ,val k))
-	       (terpri ,dest)))
-	    ((listp ,val)
-	     (dolist (item ,val)
-	       (format ,dest ,directive item)
-	       (terpri ,dest)))
-	    (t
-	     (format ,dest ,directive ,val))))))
-
-(defun expand-format (dest cilist args)
-  (if (equal cilist '("~A~%"))
-      (append (mapcar #'(lambda (arg) `(fformat1 ,dest "~A " ,arg)) args)
-	   `((format ,dest "~%")))
-
-      ;loop through directives, consume arguments
-      (do ((res '())
-	   (directives cilist (cdr directives))
-	   (arglist args arglist))
-	  ((null directives)
-	   (nreverse res))
-	(cond ((stringp (first directives))
-	       ;;(format t "~a~%" (first directives))
-	       (push `(format ,dest ,(first directives))
-		     res))
-	      (t
-	       (push `(fformat1 ,dest
-		       ,(car (first directives)) 
-		       ,(first arglist))
-		     res)
-	       (setq arglist (cdr arglist)))))))
-||#
-
 ;; Initialize a multi-dimensional array of character strings. I think
 ;; we need to do it this way to appease some picky compilers (like
 ;; CMUCL).  The initial-element is needed to get rid of a warning
@@ -1637,8 +1455,15 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.108 2009/01/07 17:28:19 rtoy Exp $
+;;; $Id: macros.l,v 1.109 2009/01/07 21:34:41 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.109  2009/01/07 21:34:41  rtoy
+;;; Clean up junk:
+;;;
+;;; o Remove unused macro REXPT.
+;;; o Remove duplicated function PROCESS-IMPLIED-DO.
+;;; o Remove code that was commented out.
+;;;
 ;;; Revision 1.108  2009/01/07 17:28:19  rtoy
 ;;; f2cl0.l:
 ;;; o Export new dfloat function, an alias for dble.

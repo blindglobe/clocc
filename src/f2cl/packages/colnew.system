@@ -116,7 +116,6 @@
 
 
 ;; Test problem 3 from TOMS 569.
-#+nil
 (mk:defsystem colnew-test-3
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "colnew"))
 				    *colnew-root*)

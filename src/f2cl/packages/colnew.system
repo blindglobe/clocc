@@ -73,3 +73,65 @@
 		    :depends-on ("subfor" "subbak"))
 	     (:file "subfor")
 	     (:file "subbak")))))
+
+;; Test problem 1 from TOMS 569.
+;;
+;; Run (*main*).  Appears to work since the error tolerance is satisfied. 
+(mk:defsystem colnew-test-1
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "colnew"))
+				    *colnew-root*)
+  :depends-on ("colnew")
+  :components
+  ((:module problem-1
+	    :source-extension "f"
+	    :language :f2cl
+	    :compiler-options (:common-as-array t)
+	    :components
+	    ((:file "prob1"
+		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "exact"))
+	     (:file "fsub")
+	     (:file "gsub")
+	     (:file "dfsub")
+	     (:file "dgsub")
+	     (:file "exact")))))
+
+;; Test problem 2 from TOMS 569.  Appears to work.
+(mk:defsystem colnew-test-2
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "colnew"))
+				    *colnew-root*)
+  :depends-on ("colnew")
+  :components
+  ((:module problem-2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    ((:file "prob2"
+		    :compiler-options (:declare-common t)
+		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "solutn"))
+	     (:file "fsub")
+	     (:file "gsub")
+	     (:file "dfsub")
+	     (:file "dgsub")
+	     (:file "solutn")))))
+
+
+;; Test problem 3 from TOMS 569.
+#+nil
+(mk:defsystem colnew-test-3
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "colnew"))
+				    *colnew-root*)
+  :depends-on ("colnew")
+  :components
+  ((:module problem-3
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    ((:file "prob3"
+		    :compiler-options (:declare-common t)
+		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "solutn"))
+	     (:file "fsub")
+	     (:file "gsub")
+	     (:file "dfsub")
+	     (:file "dgsub")
+	     (:file "solutn")))))
+	    

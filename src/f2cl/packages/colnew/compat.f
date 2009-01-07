@@ -1,11 +1,3 @@
-      double precision function dfloat(x)
-*
-*     Define a possible replacement for DFLOAT
-*
-      integer x
-      dfloat = dble(x)
-      return
-      end
 c
 c     The common blocks used in colnew are defined in separate files,
 c     but the definitions overlap.  That is, we can't define the common

@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.106 2008/09/15 15:27:36 rtoy Exp $")
+  "$Id: macros.l,v 1.107 2009/01/07 02:22:00 rtoy Exp $")
 
 ;; macros:
 ;;	rexpt
@@ -1184,11 +1184,15 @@ causing all pending operations to be flushed"
       ((or (null arg-list)
 	   (and (not top)
 		(null formats)))
-       ;;(format t "~&end formats = ~S~%" formats)
+       #+nil
+       (progn
+	 (format t "~&end formats = ~S~%" formats)
+	 (format t "~&end arg-list = ~S~%" arg-list))
        (do ((more formats (rest more)))
 	   ((not (stringp (first more))))
 	 (format stream (first more)))
        arg-list)
+
     (when (null formats)
       ;; We're out of formats but not arguments.  I think Fortran says
       ;; we should start over at the last repeat spec.  So we look
@@ -1223,7 +1227,10 @@ causing all pending operations to be flushed"
 	   (dotimes (k (first formats))
 	     ;;(format t "k = ~A, format = ~S~%" k (second formats))
 	     (setf arg-list
-		   (execute-format nil stream (second formats) arg-list)))
+		   (execute-format nil stream (second formats) arg-list))
+	     ;; Gotta exit if we're out of arguments to print!
+	     (unless arg-list
+	       (return)))
 	   (setf formats (rest formats))
 	   ;; Output a newline after the repeat (I think Fortran says this)
 	   ;;(format stream "~&")
@@ -1231,8 +1238,6 @@ causing all pending operations to be flushed"
 	   )
 	  ((eq (first formats) t)
 	   ;; Repeat "forever" (until we run out of data)
-	   ;;(format t "forever arg = ~S~%" arg-list)
-	   ;;(format t " formats    = ~S~%" (second formats))
 	   (loop while arg-list do
 		(setf arg-list
 		      (execute-format nil stream (second formats) arg-list))
@@ -1632,8 +1637,13 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.106 2008/09/15 15:27:36 rtoy Exp $
+;;; $Id: macros.l,v 1.107 2009/01/07 02:22:00 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.107  2009/01/07 02:22:00  rtoy
+;;; Need to quit a repeated group if we're out of arguments to print.
+;;; This prevents us from repeatedly print newlines and other strings when
+;;; the repetition is more than the number of arguments we have left.
+;;;
 ;;; Revision 1.106  2008/09/15 15:27:36  rtoy
 ;;; Fix serious bug in aint.  aint(x) for x an integer was returning x-1
 ;;; (for positive x).  It should have returned x.

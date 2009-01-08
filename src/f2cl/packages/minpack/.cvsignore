@@ -1,5 +1,6 @@
 *.lisp
 *.ppcf
+*.sse2f
 tst-hybrd
 tst-lmder
 tst-lmdif

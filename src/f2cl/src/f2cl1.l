@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.211 2009/01/07 17:28:19 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.212 2009/01/08 18:58:49 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -28,13 +28,16 @@
 (defvar f2cl-lib::*f2cl-macros-version*)
 
 (defun f2cl-version ()
-  (list *f2cl1-version*
-	*f2cl2-version*
-	*f2cl3-version*
-	*f2cl4-version*
-	*f2cl5-version*
-	*f2cl6-version*
-	f2cl-lib::*f2cl-macros-version*))
+  (mapcar #'(lambda (s)
+	      ;; Need to strip off the leading $ so CVS/RCS won't create a new Id.
+	      (string-left-trim "$Id: " s))
+	  (list *f2cl1-version*
+		*f2cl2-version*
+		*f2cl3-version*
+		*f2cl4-version*
+		*f2cl5-version*
+		*f2cl6-version*
+		f2cl-lib::*f2cl-macros-version*)))
 
  
 (defvar *intrinsic-function-names*
@@ -3176,8 +3179,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.211 2009/01/07 17:28:19 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.212 2009/01/08 18:58:49 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.212  2009/01/08 18:58:49  rtoy
+;;; Need to strip off the CVS Id marker when printing the f2cl versions so
+;;; that if the file is checked in, CVS doesn't mangle that info.
+;;;
 ;;; Revision 1.211  2009/01/07 17:28:19  rtoy
 ;;; f2cl0.l:
 ;;; o Export new dfloat function, an alias for dble.

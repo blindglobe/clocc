@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.111 2009/01/07 21:50:16 rtoy Exp $")
+  "$Id: macros.l,v 1.112 2009/01/08 12:57:19 rtoy Exp $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -1448,17 +1448,34 @@ causing all pending operations to be flushed"
 	  (declare (ignore frac sign))
 	  (- exp 1)))
     ))
-     
+
+;; F2cl cannot tell if a STOP statement is an error condition or just
+;; the end of the program.  So, by default, we signal a continuable
+;; error.  However, we give the user the option of silently returning
+;; or not.
+(defvar *stop-signals-error-p* nil
+  "When non-NIL, STOP will signal an continuable error.  Otherwise, STOP just returns")
+
 (defun stop (&optional arg)
   (when arg
     (format cl::*error-output* "~A~%" arg))
-  (cerror "Continue anyway" "STOP reached"))
+  (unless *stop-signals-error-p*
+    (cerror "Continue anyway" "STOP reached")))
 
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.111 2009/01/07 21:50:16 rtoy Exp $
+;;; $Id: macros.l,v 1.112 2009/01/08 12:57:19 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.112  2009/01/08 12:57:19  rtoy
+;;; f2cl0.l:
+;;; o Export *STOP-SIGNALS-ERROR-P*
+;;;
+;;; macros.l:
+;;; o Add *STOP-SIGNALS-ERROR-P* to allow user to control whether STOP
+;;;   signals a continuable error or not.  Default is to signal the
+;;;   error.
+;;;
 ;;; Revision 1.111  2009/01/07 21:50:16  rtoy
 ;;; Use the fast rint-* functions for CMUCL with sse2 support.
 ;;;

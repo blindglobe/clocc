@@ -36,6 +36,7 @@
    #:%false% #:%true%
    ;; User-settable runtime options
    #:*check-array-bounds*
+   #:*stop-signals-error-p*
    ;; Types
    #:integer4 #:integer2 #:integer1 #:real8 #:real4 #:complex8 #:complex16
    #:array-double-float #:array-single-float #:array-integer4 #:array-strings
@@ -84,8 +85,17 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.22 2009/01/07 17:28:19 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.23 2009/01/08 12:57:19 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.23  2009/01/08 12:57:19  rtoy
+;;; f2cl0.l:
+;;; o Export *STOP-SIGNALS-ERROR-P*
+;;;
+;;; macros.l:
+;;; o Add *STOP-SIGNALS-ERROR-P* to allow user to control whether STOP
+;;;   signals a continuable error or not.  Default is to signal the
+;;;   error.
+;;;
 ;;; Revision 1.22  2009/01/07 17:28:19  rtoy
 ;;; f2cl0.l:
 ;;; o Export new dfloat function, an alias for dble.

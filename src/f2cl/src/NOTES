@@ -9,6 +9,17 @@ o The handling of ENTRY functions sometimes left undefined variables
   in the generated code.  This is fixed now.
 o Implied-do loops with a step value did not correctly handle the
   step, treating the step as a function call.
+o FORMAT statements like 100(/8F12.6) would end up printing up to 100
+  newlines even when there were only a few arguments to be printed.
+  This bug is fixed and processing stops when we run out of arguments
+  to print.
+o DFLOAT function added to the list of instrinsics.
+o Cleaned out old, unused stuff from macros.l.
+o Added *STOP-SIGNALS-ERROR-P* to control whether STOP should signal a
+  continuable error or not.
+o The DEFPARAMETER's for common blocks are now top-level forms as they
+  should be to get the desired compile-time side effects.
+o Implied-do loops with a step are now handled correctly.
 
 August 2008
 ------------

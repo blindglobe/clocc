@@ -20,7 +20,10 @@ o Added *STOP-SIGNALS-ERROR-P* to control whether STOP should signal a
 o The DEFPARAMETER's for common blocks are now top-level forms as they
   should be to get the desired compile-time side effects.
 o Implied-do loops with a step are now handled correctly.
-
+o Parsing of D format descriptors was incorrect.  The repetition
+  factor was being returned as NIL, but it should have defaulted to
+  one.
+ 
 August 2008
 ------------
 o Added :common-block-file option to F2CL and F2CL-COMPILE.  When set,

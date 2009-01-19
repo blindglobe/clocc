@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.199 2009/01/07 19:16:59 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.200 2009/01/19 02:38:17 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -3526,7 +3526,7 @@
       (list a (list directive)))))
 
 (defun parse-format-descriptor-D (left right)
-  (let ((k 0) (a nil) w d (e 2))
+  (let ((k 0) (a 1) w d (e 2))
     (declare (special k a w d e *scale-factor*))
     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
 	(pattern-match-and-bind '((> k) #\P) left)
@@ -3847,8 +3847,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.199 2009/01/07 19:16:59 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.200 2009/01/19 02:38:17 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.200  2009/01/19 02:38:17  rtoy
+;;; The number of repetitions for the D format descriptor should default
+;;; to 1, not NIL, like we do for E, F, and G.
+;;;
 ;;; Revision 1.199  2009/01/07 19:16:59  rtoy
 ;;; Minor change on how common blocks are initialized.  We want to make
 ;;; the DEFPARAMETER a top-level form so the compile-time side-effects

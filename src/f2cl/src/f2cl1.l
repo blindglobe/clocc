@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.212 2009/01/08 18:58:49 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.213 2009/01/23 14:28:12 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -2320,7 +2320,8 @@ FILENAME                 File containing Fortran code
   (if (rest x)
       (setq *save_vbles*
 	    (append *save_vbles*
-		    (remove '|,| (if (eq (first (cdr x)) '/) (cddddr x) (cdr x)))))
+		    (mapcar #'check-reserved-lisp-names
+			    (remove '|,| (if (eq (first (cdr x)) '/) (cddddr x) (cdr x))))))
       (setq *save_vbles* '%save-all-locals%))
    nil) 
   
@@ -3179,8 +3180,16 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.212 2009/01/08 18:58:49 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.213 2009/01/23 14:28:12 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.213  2009/01/23 14:28:12  rtoy
+;;; PARSE-SAVE needs to check for reserved lisp names to be consistent
+;;; with other parse routines.
+;;;
+;;; Otherwise, in dlasq3, dmin1 is appears as both dmin1 and dmin1$ and
+;;; that ends up producing an incorrect initialization and declaration for
+;;; dmin1$.
+;;;
 ;;; Revision 1.212  2009/01/08 18:58:49  rtoy
 ;;; Need to strip off the CVS Id marker when printing the f2cl versions so
 ;;; that if the file is checked in, CVS doesn't mangle that info.

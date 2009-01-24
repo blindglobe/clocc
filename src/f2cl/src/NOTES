@@ -23,6 +23,9 @@ o Implied-do loops with a step are now handled correctly.
 o Parsing of D format descriptors was incorrect.  The repetition
   factor was being returned as NIL, but it should have defaulted to
   one.
+o Fix bug in handling of SAVE variables when the variable name is the
+  same as an intrinsic function.  This was causing the variable to be
+  declared and initialized incorrectly sometimes.
  
 August 2008
 ------------

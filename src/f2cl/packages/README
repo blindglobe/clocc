@@ -41,3 +41,6 @@ toms		Tranactions on Mathematical Software
 
 colnew		COLNEW package from netlib for solving boundary-value 
 		ODEs. Currently untested, but it does compile.
+
+donlp2		The Fortran source has been removed at the request of
+		the author.

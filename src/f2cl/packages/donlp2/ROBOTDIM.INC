@@ -1,3 +1,0 @@
-      INTEGER XDIM,BDM
-      PARAMETER (XDIM=21,BDM=81)
-

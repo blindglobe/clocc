@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.25 2008/06/16 16:02:32 sds Exp $
+;;; $Id: csv.lisp,v 2.26 2009/03/09 20:47:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -17,10 +17,13 @@
 (in-package :cllib)
 
 (export '(csv-print-vector csv-parse-string csv-read-file with-csv csv-names
-          class-csv-header class-csv-print
+          class-csv-header class-csv-print *csv-first-line-names*
           *csv-separator* *csv-whitespace* *csv-progress* *csv-progress-1*))
 
 (defcustom *csv-separator* character #\,
+  "The separator in the CSV file, normally the comma.")
+
+(defcustom *csv-first-line-names* (or t nil :default) :default
   "The separator in the CSV file, normally the comma.")
 
 (defun csv-print-vector (vec &optional (out *standard-output*))
@@ -76,7 +79,7 @@
            fn pos (length vec) cols vec)))
 
 (defmacro with-csv ((vec file &key (progress '*csv-progress*)
-                         (first-line-names :default) junk-allowed
+                         (first-line-names '*csv-first-line-names*) junk-allowed
                          (progress-1 '*csv-progress-1*) limit
                          (out '*standard-output*) columns)
                     &body body)
@@ -154,7 +157,8 @@ Return 3 values:
                                 ,l1))))))))
 
 ;;;###autoload
-(defun csv-read-file (inf &key (first-line-names :default) junk-allowed)
+(defun csv-read-file (inf &key (first-line-names *csv-first-line-names*)
+                      junk-allowed)
   "Read comma-separated values into a list of vectors."
   (let (len file-size complete names)
     (values (with-collect (coll)

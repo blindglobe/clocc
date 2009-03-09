@@ -1,10 +1,10 @@
 ;;; Data Analysis and Visualization
 ;;;
-;;; Copyright (C) 2006-2008 by Sam Steingold
+;;; Copyright (C) 2006-2009 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.50 2008/06/16 16:02:32 sds Exp $
+;;; $Id: data.lisp,v 1.51 2009/03/09 20:48:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -275,7 +275,7 @@
          plot-opts))
 
 ;;;###autoload
-(defun analyse-csv (file &key (first-line-names :default)
+(defun analyse-csv (file &key (first-line-names *csv-first-line-names*)
                     (out *standard-output*) medians junk-allowed
                     ((:value-boundary *value-boundary*) *value-boundary*)
                     ((:columns *columns*) *columns*)

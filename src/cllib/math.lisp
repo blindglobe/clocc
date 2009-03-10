@@ -1,10 +1,10 @@
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
-;;; Copyright (C) 1997-2008 by Sam Steingold
+;;; Copyright (C) 1997-2009 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.94 2008/10/10 20:36:16 sds Exp $
+;;; $Id: math.lisp,v 2.95 2009/03/10 17:43:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -38,6 +38,7 @@
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl min+max
    entropy-sequence entropy-distribution kullback-leibler
+   mutual-information-continuous
    information mutual-information dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma mdl-mi$ mdl-ma$
    mdl-normalize mdl-denormalize mdl-normalize-function
@@ -1263,6 +1264,45 @@ NIL result stands for infinity."
     (unless (approx=-abs sum2 1)
       (error "~S: total probability is ~S /= 1" 'kullback-leibler sum2))
     (values kl ent1 ent2)))
+
+(defun mutual-information-continuous (seq &key (key #'identity))
+  "Compute the mutual information of a two continuous random variables
+given their joint distribution. KEY should return a cons cell (X . Y).
+Return 5 values: Mi, Hxy, Hx, Hy (NB: Mi + Hxy = Hx + Hy)
+ and Udist = (Hxy - Mi) / Hxy"
+  (let* ((pairs (map 'vector key seq))
+         (min1 (car (aref pairs 0))) (max1 min1) scale1
+         (min2 (cdr (aref pairs 0))) (max2 min2) scale2
+         (len (length pairs)) (scale (/ 1d0 len))
+         (nbin (round (expt len 1/3))) (nbin-1 (- nbin 1))
+         (pair-bins (make-array (list nbin nbin) :initial-element 0))
+         (x-bins (make-array nbin :initial-element 0))
+         (y-bins (make-array nbin :initial-element 0))
+         (mi 0d0) (xh 0d0) (yh 0d0) (h 0d0))
+    (loop :for (x . y) :across pairs :do
+      (setq min1 (min min1 x) max1 (max max1 x)
+            min2 (min min2 y) max2 (max max2 y)))
+    (setq scale1 (float (/ nbin (- max1 min1)) 0d0)
+          scale2 (float (/ nbin (- max2 min2)) 0d0))
+    (loop :for (x . y) :across pairs
+      :for i = (min nbin-1 (round (* (- x min1) scale1)))
+      :and j = (min nbin-1 (round (* (- y min2) scale2))) :do
+      (incf (aref pair-bins i j))
+      (incf (aref x-bins i))
+      (incf (aref y-bins j)))
+    (dotimes (i nbin)
+      (let ((y (* scale (aref y-bins i))))
+        (when (plusp y)
+          (incf yh (* y (log y 2)))))
+      (let ((x (* scale (aref x-bins i))))
+        (when (plusp x)
+          (incf xh (* x (log x 2)))
+          (dotimes (j nbin)
+            (let ((xy (* scale (aref pair-bins i j))))
+              (when (plusp xy)
+                (incf mi (* xy (log (/ xy x (aref y-bins j) scale) 2)))
+                (incf h (* xy (log xy 2)))))))))
+    (values mi (- h) (- xh) (- yh) (/ (+ mi h) h))))
 
 (defun kurtosis-skewness (seq &key (key #'value) std mean len)
   "Compute the skewness and kurtosis (3rd & 4th centered momenta)."

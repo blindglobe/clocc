@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.96 2009/03/11 16:21:38 sds Exp $
+;;; $Id: math.lisp,v 2.97 2009/03/11 17:42:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -38,8 +38,8 @@
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl min+max
    entropy-sequence entropy-distribution kullback-leibler
-   mutual-information-continuous
-   information mutual-information dependency proficiency correlation
+   mutual-information-N mutual-information-continuous
+   information mutual-information-2 dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma mdl-mi$ mdl-ma$
    mdl-normalize mdl-denormalize mdl-normalize-function
    normalizer-table normalize-function-list
@@ -1230,6 +1230,14 @@ occurs, i.e., the normalized sequence should be the probability distribution."
                                (if (zerop num) 0 (* num (log num 2))))))))
     (- (log tot 2) (/ sum tot))))
 
+(defun entropy-ht (ht)
+  "Compute the entropy of a distribution, expressed as a count hash-table."
+  (let ((tot 0) (sum 0))
+    (loop :for num :being :each :hash-value :of ht :do
+      (incf tot num)
+      (incf sum (* num (log num 2)))) ; we know num>0
+    (- (log tot 2) (/ sum tot))))
+
 (defun entropy-sequence (seq &key (key #'value) (test 'eql) (weight 1))
   "Compute the entropy of the given distribution.
 The values are counted and the result is used as a probability distribution.
@@ -1237,12 +1245,8 @@ The values are counted and the result is used as a probability distribution.
    (assert (= entropy
               (entropy-distribution
                (loop :for v :being :each :hash-value :of ht :collect v)))))"
-  (let* ((ht (count-all seq :key key :test test :weight weight))
-         (tot 0) (sum 0))
-    (loop :for num :being :each :hash-value :of ht :do
-      (incf tot num)
-      (incf sum (* num (log (dfloat num) 2)))) ; we know num>0
-    (values (- (log (dfloat tot) 2) (/ sum tot)) ht)))
+  (let ((ht (count-all seq :key key :test test :weight weight)))
+    (values (entropy-ht ht) ht)))
 
 (defun kullback-leibler (seq1 seq2 &key (key1 #'value) (key2 #'value))
   "Compute the Kullback-Leibler distance (aka relative entropy) of the
@@ -1264,6 +1268,24 @@ NIL result stands for infinity."
     (unless (approx=-abs sum2 1)
       (error "~S: total probability is ~S /= 1" 'kullback-leibler sum2))
     (values kl ent1 ent2)))
+
+(defun mutual-information-N (seq &key (key #'identity) (test 'eql))
+  "Compute the mutual information of a two discrete random variables
+given their joint distribution. KEY should return a cons cell (X . Y).
+Return 5 values: Mi, Hxy, Hx, Hy (NB: Mi + Hxy = Hx + Hy)
+ and Udist = (Hxy - Mi) / Hxy"
+  (let ((ht-x (make-hash-table :test test))
+        (ht-y (make-hash-table :test test))
+        (ht-2 (make-hash-table :test (case test ((eq eql) 'equal) (t test)))))
+    (map nil (lambda (el)
+               (let ((pair (funcall key el)))
+                 (incf (gethash pair ht-2 0))
+                 (incf (gethash (car pair) ht-x 0))
+                 (incf (gethash (cdr pair) ht-y 0))))
+         seq)
+    (let* ((xh (entropy-ht ht-x)) (yh (entropy-ht ht-y))
+           (h (entropy-ht ht-2)) (mi (- (+ xh yh) h)))
+      (values mi h xh yh (/ (- h mi) h) ht-x ht-y ht-2))))
 
 (defun mutual-information-continuous (seq &key (key #'identity))
   "Compute the mutual information of a two continuous random variables
@@ -1513,17 +1535,17 @@ where `X/N' means normalized with (GETHASH X MDL-HT)"
 
 (defun information (p &optional (N 1) &aux (q (- N p)))
   "information of distribution P(0)=p/N, P(1)=1-p/N"
-  ;; == (mutual-information p p p)
+  ;; == (mutual-information-2 p p p)
   (+ (/ (+ (info-component q q q)
            (info-component p p p))
         N)
      (log N 2)))
 
-(defun mutual-information (p12 p1 p2 &optional (N 1)
-                           &aux (q1 (- N p1)) (q2 (- N p2)))
+(defun mutual-information-2 (p12 p1 p2 &optional (N 1)
+                             &aux (q1 (- N p1)) (q2 (- N p2)))
   "Mutual information of two distributions:
 p1=p(x=1), p2=p(y=1), p12=p(x=1 & y=1)"
-  (check-probabilities p12 p1 p2 N 'mutual-information)
+  (check-probabilities p12 p1 p2 N 'mutual-information-2)
   (+ (/ (+ (info-component p12 p1 p2)                  ; x=1 y=1
            (info-component (- p2 p12) q1 p2)           ; x=0 y=1
            (info-component (- p1 p12) p1 q2)           ; x=1 y=0
@@ -1533,12 +1555,12 @@ p1=p(x=1), p2=p(y=1), p12=p(x=1 & y=1)"
 
 (defun dependency (p12 p1 p2 &optional (N 1))
   "Mutual information normalized by total entropy"
-  (let ((mi (mutual-information p12 p1 p2 N)))
+  (let ((mi (mutual-information-2 p12 p1 p2 N)))
     (/ mi (- (+ (information p1 N) (information p2 N)) mi))))
 
 (defun proficiency (p12 p1 p2 &optional (N 1))
   "information-theoretic predictive power of the first relative to the second"
-  (/ (mutual-information p12 p1 p2 N) (information p1 N)))
+  (/ (mutual-information-2 p12 p1 p2 N) (information p1 N)))
 
 (defun correlation (p12 p1 p2 &optional (N 1) &aux (q1 (- N p1)) (q2 (- N p2)))
   "correlation of two binary distributions"

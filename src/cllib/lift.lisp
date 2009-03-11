@@ -1,10 +1,10 @@
 ;;; Lift (ROC) curve analysis
 ;;;
-;;; Copyright (C) 2004-2008 by Sam Steingold
+;;; Copyright (C) 2004-2009 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: lift.lisp,v 2.11 2008/06/16 16:02:33 sds Exp $
+;;; $Id: lift.lisp,v 2.12 2009/03/11 17:48:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/lift.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -17,7 +17,7 @@
 (defpackage :lift
   (:documentation "Lift (ROC) curve analysis")
   (:use #:common-lisp)
-  (:export #:discretize #:lift-quality #:plot-lifts #:score2prob
+  (:export #:discretize-by-height #:lift-quality #:plot-lifts #:score2prob
            #:lq-lift-quality #:lq-base-rate #:lq-base-rate-detector
            #:lq-total-count #:lq-target-count #:lq-base-more-detectors
            #:detector-statistics #:ds-recall #:ds-precision #:ds-lift
@@ -76,9 +76,9 @@
 
 
 (defvar *min-bucket-size* 5
-  "the minimum size of a percentile bucket")
+  "The minimum size of a percentile bucket")
 (defvar *default-buckets* 10
-  "the default granularity `discretize'")
+  "The default granularity for `discretize-by-height'")
 
 (defstruct bucket (size 0) (true 0) beg (begf #'<=) end (endf #'<=))
 
@@ -216,8 +216,8 @@ Buckets may overlap and not cover the whole range."
     (show-buckets bl (length seq) :out out)
     bl))
 
-(defun discretize (seq &key (buckets *default-buckets*) (key #'identity)
-                   true-value)
+(defun discretize-by-height (seq &key (buckets *default-buckets*)
+                             (key #'identity) true-value)
   "Discretize the sequence into (approximately) equal-height buckets."
   (setq seq (sort seq #'< :key key)) ; can we assume this?
   (let* ((total-count (length seq)) (bucket-count 1)
@@ -230,7 +230,8 @@ Buckets may overlap and not cover the whole range."
     (unless (>= bucket-size *min-bucket-size*)
       (let ((new-buckets (ceiling total-count *min-bucket-size*)))
         (warn "~S: too small buckets: ~5F<~D, reset bucket count from ~D to ~D"
-              'discretize bucket-size *min-bucket-size* buckets new-buckets)
+              'discretize-by-height bucket-size *min-bucket-size*
+              buckets new-buckets)
         (setq buckets new-buckets
               bucket-size (float (/ total-count buckets) 0d0)
               mean-size bucket-size)))
@@ -261,21 +262,22 @@ Buckets may overlap and not cover the whole range."
     (let ((total (reduce #'+ bucket-list :key #'bucket-size)))
       (assert (= total-count total) (total-count bucket-list)
               "~S: bad total count: ~S /= ~S~%~S"
-              'discretize total-count total bucket-list))
+              'discretize-by-height total-count total bucket-list))
     (when true-value
       (let ((total (reduce #'+ bucket-list :key #'bucket-true)))
         (assert (= true-count total) (true-count bucket-list)
                 "~S: bad true count: ~S /= ~S~%~S"
-                'discretize true-count total bucket-list)))
+                'discretize-by-height true-count total bucket-list)))
     (assert (every #'check-bucket bucket-list)
-            (bucket-list) "~S: bad buckets:~%~S" 'discretize
+            (bucket-list) "~S: bad buckets:~%~S" 'discretize-by-height
             (remove-if-not #'check-bucket bucket-list))
     (let (bad)
       (assert (null (setq bad (loop :for (a b) :on bucket-list
                                 :when (and b (>= (bucket-end a) (bucket-beg b)))
                                 :collect (list a b))))
               (bucket-list)
-              "~S: bucket thresholds are not increasing:~S" 'discretize bad))
+              "~S: bucket thresholds are not increasing:~S"
+              'discretize-by-height bad))
     bucket-list))
 
 (defun prune-bucket-list (blist)
@@ -370,8 +372,8 @@ Buckets may overlap and not cover the whole range."
   "Return an increasing piecewise linear function
 which converts scores to probabilities."
   (when out (lift-quality seq :score score :true-value true-value :out out))
-  (let* ((bucket-list (discretize seq :key score :buckets buckets
-                                  :true-value true-value))
+  (let* ((bucket-list (discretize-by-height seq :key score :buckets buckets
+                                            :true-value true-value))
          (bucket1 (first bucket-list))
          (len (length bucket-list)) plf
          (yv (make-array (1+ len))) (xv (make-array (1+ len))))

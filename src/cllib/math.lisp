@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.95 2009/03/10 17:43:22 sds Exp $
+;;; $Id: math.lisp,v 2.96 2009/03/11 16:21:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -1405,14 +1405,14 @@ and the list of the volatilities for each year."
 (defstruct (mdl)
   "MDL structure contains sample statistics.
 It is printed as follows: [mean standard-deviation max/min length[ entropy]]
-When the distribution is not discreet, entropy is not available."
+When the distribution is not discrete, entropy is not available."
   (mn 0d0 :type double-float)       ; Mean
   (sd 0d0 :type (double-float 0d0)) ; Deviation
   (ma 0 :type number)               ; Max
   (ma$ 0 :type index-t)             ; Max count
   (mi 0 :type number)               ; Min
   (mi$ 0 :type index-t)             ; Min count
-  (en 0 :type (or null number)) ; entropy (only when discreet)
+  (en 0 :type (or null number)) ; entropy (only when discrete)
   (le 0 :type index-t))         ; Length
 
 (defconst +bad-mdl+ mdl (make-mdl) "The convenient constant for init.")
@@ -1429,7 +1429,7 @@ When the distribution is not discreet, entropy is not available."
         (format out "[~6f ~6f ~6@A/~5A ~6@A/~5A ~5:d~@[ ~6f~]]"
                 (mdl-mn mdl) (mdl-sd mdl) ma ma$ mi mi$ (mdl-le mdl) en))))
 
-(defun standard-deviation-mdl (seq &key (key #'value) weight discreet)
+(defun standard-deviation-mdl (seq &key (key #'value) weight discrete)
   "Compute an MDL from the SEQ."
   (let ((len (length seq)))
     (if (zerop len) +bad-mdl+
@@ -1439,7 +1439,7 @@ When the distribution is not discreet, entropy is not available."
                 (standard-deviation seq :len len :key key))
           (make-mdl :sd (dfloat std) :mn (dfloat mean) :le len
                     :mi min :ma max :mi$ mi$ :ma$ ma$
-                    :en (when discreet
+                    :en (when discrete
                           (if (= min max) 0
                               (entropy-sequence seq :key key
                                                 :weight weight))))))))

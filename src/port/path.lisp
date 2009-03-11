@@ -1,6 +1,6 @@
 ;;; Pathnames and Filesystems
 ;;;
-;;; Copyright (C) 1999-2004, 2007 by Sam Steingold
+;;; Copyright (C) 1999-2009 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.12 2007/09/21 16:49:37 sds Exp $
+;;; $Id: path.lisp,v 1.13 2009/03/11 15:51:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -175,13 +175,14 @@ STYLE can be either :CMU or :ALLEGRO."
 
 (defun logical-host-p (word)
   "Check whether this word has already been defined as a logical host."
+  #+allegro (excl::logical-host-p word)
   #+(or clisp lispworks)
   (gethash (string-upcase word) SYSTEM::*LOGICAL-PATHNAME-TRANSLATIONS*)
   #+cmucl
   (gethash (string-upcase word) LISP::*LOGICAL-HOSTS*)
   #+sbcl
   (gethash (string-upcase word) SB-IMPL::*LOGICAL-HOSTS*)
-  #-(or clisp cmucl lispworks sbcl)
+  #-(or allegro clisp cmucl lispworks sbcl)
   (ignore-errors (logical-pathname-translations word)))
 
 (provide :port-path)

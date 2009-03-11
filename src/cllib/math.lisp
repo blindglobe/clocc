@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.97 2009/03/11 17:42:59 sds Exp $
+;;; $Id: math.lisp,v 2.98 2009/03/11 18:40:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -1269,11 +1269,12 @@ NIL result stands for infinity."
       (error "~S: total probability is ~S /= 1" 'kullback-leibler sum2))
     (values kl ent1 ent2)))
 
-(defun mutual-information-N (seq &key (key #'identity) (test 'eql))
+(defun mutual-information-N (seq &key (key #'value) (test 'eql))
   "Compute the mutual information of a two discrete random variables
 given their joint distribution. KEY should return a cons cell (X . Y).
-Return 5 values: Mi, Hxy, Hx, Hy (NB: Mi + Hxy = Hx + Hy)
- and Udist = (Hxy - Mi) / Hxy"
+Return 8 values: Mi, Hxy, Hx, Hy (NB: Mi + Hxy = Hx + Hy)
+  Udist = (Hxy - Mi) / Hxy
+and 3 count hash-tables: for X, for Y and for pairs."
   (let ((ht-x (make-hash-table :test test))
         (ht-y (make-hash-table :test test))
         (ht-2 (make-hash-table :test (case test ((eq eql) 'equal) (t test)))))
@@ -1287,44 +1288,44 @@ Return 5 values: Mi, Hxy, Hx, Hy (NB: Mi + Hxy = Hx + Hy)
            (h (entropy-ht ht-2)) (mi (- (+ xh yh) h)))
       (values mi h xh yh (/ (- h mi) h) ht-x ht-y ht-2))))
 
-(defun mutual-information-continuous (seq &key (key #'identity))
+(defun discretize-by-width (min max nbin &key logscale)
+  "Return the function discretizing [MIN;MAX] into NBIN equal-width bins."
+  (if logscale
+      (let* ((scale (expt (/ max min) (/ nbin)))
+             (base (log (abs min) scale)) (nbin-1 (- nbin 1)))
+        (unless (plusp (* min max))
+          (error "~S: cannot use log scale for mixed sign data in [~G;~G]"
+                 'discretize-by-width min max))
+        (lambda (x) (max 0 (min nbin-1 (floor (- (log (abs x) scale) base))))))
+      (let ((scale (/ nbin (- max min))) (nbin-1 (- nbin 1)))
+        (lambda (x) (max 0 (min nbin-1 (floor (* (- x min) scale))))))))
+
+(defun mutual-information-continuous (seq &key (key #'identity) nbin
+                                      logscale-x discretize-x
+                                      logscale-y discretize-y)
   "Compute the mutual information of a two continuous random variables
 given their joint distribution. KEY should return a cons cell (X . Y).
-Return 5 values: Mi, Hxy, Hx, Hy (NB: Mi + Hxy = Hx + Hy)
- and Udist = (Hxy - Mi) / Hxy"
-  (let* ((pairs (map 'vector key seq))
-         (min1 (car (aref pairs 0))) (max1 min1) scale1
-         (min2 (cdr (aref pairs 0))) (max2 min2) scale2
-         (len (length pairs)) (scale (/ 1d0 len))
-         (nbin (round (expt len 1/3))) (nbin-1 (- nbin 1))
-         (pair-bins (make-array (list nbin nbin) :initial-element 0))
-         (x-bins (make-array nbin :initial-element 0))
-         (y-bins (make-array nbin :initial-element 0))
-         (mi 0d0) (xh 0d0) (yh 0d0) (h 0d0))
-    (loop :for (x . y) :across pairs :do
-      (setq min1 (min min1 x) max1 (max max1 x)
-            min2 (min min2 y) max2 (max max2 y)))
-    (setq scale1 (float (/ nbin (- max1 min1)) 0d0)
-          scale2 (float (/ nbin (- max2 min2)) 0d0))
-    (loop :for (x . y) :across pairs
-      :for i = (min nbin-1 (round (* (- x min1) scale1)))
-      :and j = (min nbin-1 (round (* (- y min2) scale2))) :do
-      (incf (aref pair-bins i j))
-      (incf (aref x-bins i))
-      (incf (aref y-bins j)))
-    (dotimes (i nbin)
-      (let ((y (* scale (aref y-bins i))))
-        (when (plusp y)
-          (incf yh (* y (log y 2)))))
-      (let ((x (* scale (aref x-bins i))))
-        (when (plusp x)
-          (incf xh (* x (log x 2)))
-          (dotimes (j nbin)
-            (let ((xy (* scale (aref pair-bins i j))))
-              (when (plusp xy)
-                (incf mi (* xy (log (/ xy x (aref y-bins j) scale) 2)))
-                (incf h (* xy (log xy 2)))))))))
-    (values mi (- h) (- xh) (- yh) (/ (+ mi h) h))))
+Return the same values as MUTUAL-INFORMATION-N."
+  (let ((nbin (or nbin (round (expt (length seq) 1/3)))) pairs)
+    (unless (and discretize-x discretize-y)
+      (setq pairs (map 'vector key seq))
+      (let* ((minX (car (aref pairs 0))) (maxX minX)
+             (minY (cdr (aref pairs 0))) (maxY minY))
+        (loop :for (x . y) :across pairs :do
+          (setq minX (min minX x) maxX (max maxX x)
+                minY (min minY y) maxY (max maxY y)))
+        (unless discretize-x
+          (setq discretize-x
+                (discretize-by-width minX maxX nbin :logscale logscale-x)))
+        (unless discretize-y
+          (setq discretize-y
+                (discretize-by-width minY maxY nbin :logscale logscale-y)))))
+    (flet ((discretize (pair)
+             (cons (funcall discretize-x (car pair))
+                   (funcall discretize-y (cdr pair)))))
+      (if pairs
+          (mutual-information-N pairs :key #'discretize)
+          (mutual-information-N pairs :key (port:compose discretize 'key))))))
 
 (defun kurtosis-skewness (seq &key (key #'value) std mean len)
   "Compute the skewness and kurtosis (3rd & 4th centered momenta)."

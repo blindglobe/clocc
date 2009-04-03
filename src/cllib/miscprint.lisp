@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.26 2009/04/03 15:47:47 sds Exp $
+;;; $Id: miscprint.lisp,v 1.27 2009/04/03 16:29:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -129,19 +129,32 @@ The inverse is `hash-table->alist'."
 
 (defun print-counts (count-ht &key (out *standard-output*) (key-numeric-p nil)
                      (format
-                      (if key-numeric-p
-                          (formatter "~&;; ~5:D --> ~8:D ~,2F% (~:D, ~,2F%)~%")
-                          (formatter "~&;; ~5A --> ~8:D ~,2F% (~:D, ~,2F%)~%"))))
+                      (formatter "~&;; ~VA --> ~V@A ~,2F% (~:D, ~,2F%)~%"))
+                     cwidth owidth)
   "Print counts of elements, sorted by frequency.
 If KEY-NUMERIC-P is non-NIL, sort by KEY instead.
 Usage: (print-counts (count-all seq ...))"
   (when out
-    (loop :with alist = (sort (cdr (hash-table->alist count-ht))
-                              #'> :key (if key-numeric-p #'car #'cdr))
-      :with total = (reduce #'+ alist :key #'cdr) :with cumul = 0
-      :for (object . count) :in alist
+    (loop :with commify = (lambda (x) (format nil "~:D" x))
+      :with alist =
+      (port:map-in (lambda (pair)
+                     (let ((car (car pair)) (cdr (cdr pair)))
+                       (setf (car pair)
+                             (cons car (if key-numeric-p (format nil "~:D" car)
+                                           (princ-to-string car)))
+                             (cdr pair)
+                             (cons cdr (format nil "~:D" cdr)))
+                       pair))
+                   (sort (cdr (hash-table->alist count-ht))
+                         #'> :key (if key-numeric-p #'car #'cdr)))
+      :with total = (reduce #'+ alist :key #'cadr) :with cumul = 0
+      :with cwidth = (or cwidth
+                         (reduce #'max alist :key (port:compose length cddr)))
+      :with owidth = (or owidth
+                         (reduce #'max alist :key (port:compose length cdar)))
+      :for ((object . object-s) . (count . count-s)) :in alist
       :for line :upfrom 0 :until (and *print-lines* (> line *print-lines*))
-      :do (format out format object count (/ count 1s-2 total)
+      :do (format out format owidth object-s cwidth count-s (/ count 1s-2 total)
                   (incf cumul count) (/ cumul 1s-2 total)))))
 
 ;;;###autoload

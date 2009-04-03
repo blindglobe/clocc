@@ -1,10 +1,10 @@
 ;;; Read from/Write to files
 ;;;
-;;; Copyright (C) 1997-2008 by Sam Steingold
+;;; Copyright (C) 1997-2009 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.49 2008/09/22 19:24:00 sds Exp $
+;;; $Id: fileio.lisp,v 1.50 2009/04/03 15:01:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -113,10 +113,10 @@ This function finds such a header among the first 1024 bytes
              :and cs :of-type file-size-t = 0 :and err :of-type boolean = nil
              :finally
              (format
-              t " *** Total~20t~8:d forms, ~9:d bytes, ~7,2f bytes/form~%"
+              t " *** Total~20t~8:d forms, ~9:d byte~:p, ~7,2f bytes/form~%"
               tc ts (/ ts tc))
              :do (setf (values cc cs err) (code-complexity fl))
-             (format t " * ~a~20t~8:d forms, ~9:d bytes, ~7,2f bytes/form~%"
+             (format t " * ~a~20t~8:d forms, ~9:d byte~:p, ~7,2f bytes/form~%"
                      fl cc cs (/ cs cc))
              (setq errorp (or errorp err))
              :sum cc :into tc :of-type index-t
@@ -204,7 +204,7 @@ defaults to `read' and is called with 3 arguments - STREAM, NIL and EOF.
           (unless stin
             (return-from read-list-from-file
               (format t "~& *** Cannot open file `~a' for reading~%" fin)))
-          (format t "~&Reading `~a' [~:d bytes]..." fin (file-length stin))
+          (format t "~&Reading `~a' [~:d byte~:p]..." fin (file-length stin))
           (force-output)
           (apply #'read-list-from-stream stin read-function args))
       (format t "done [~:d record~:p]" len)
@@ -278,7 +278,7 @@ Passes REPEAT (default NIL) keyword argument to `read-from-stream'."
     (with-open-file (str file :direction :input)
       (when out
         (setq file-length (file-length str))
-        (format out "~&Reading `~a' [~:d bytes]..." file file-length)
+        (format out "~&Reading `~a' [~:d byte~:p]..." file file-length)
         (force-output out))
       (with-standard-io-syntax
         (let ((*readtable* readtable) (*package* package)

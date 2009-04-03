@@ -1,10 +1,10 @@
 ;;; print misc special opjects
 ;;;
-;;; Copyright (C) 1997-2008 by Sam Steingold
+;;; Copyright (C) 1997-2009 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.25 2008/06/16 16:02:33 sds Exp $
+;;; $Id: miscprint.lisp,v 1.26 2009/04/03 15:47:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -130,8 +130,8 @@ The inverse is `hash-table->alist'."
 (defun print-counts (count-ht &key (out *standard-output*) (key-numeric-p nil)
                      (format
                       (if key-numeric-p
-                          (formatter "~&;; ~5:D --> ~8:D (~:D, ~,2F%)~%")
-                          (formatter "~&;; ~5A --> ~8:D (~:D, ~,2F%)~%"))))
+                          (formatter "~&;; ~5:D --> ~8:D ~,2F% (~:D, ~,2F%)~%")
+                          (formatter "~&;; ~5A --> ~8:D ~,2F% (~:D, ~,2F%)~%"))))
   "Print counts of elements, sorted by frequency.
 If KEY-NUMERIC-P is non-NIL, sort by KEY instead.
 Usage: (print-counts (count-all seq ...))"
@@ -141,8 +141,8 @@ Usage: (print-counts (count-all seq ...))"
       :with total = (reduce #'+ alist :key #'cdr) :with cumul = 0
       :for (object . count) :in alist
       :for line :upfrom 0 :until (and *print-lines* (> line *print-lines*))
-      :do (format out format object count (incf cumul count)
-                  (/ cumul 1s-2 total)))))
+      :do (format out format object count (/ count 1s-2 total)
+                  (incf cumul count) (/ cumul 1s-2 total)))))
 
 ;;;###autoload
 (defun make-ht-readtable (&optional (rt (copy-readtable)))

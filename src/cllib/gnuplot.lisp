@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.50 2009/04/03 15:40:59 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.51 2009/04/03 15:42:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -636,7 +636,7 @@ OPTS is passed to `plot-lists-arg'."
                        (min (mdl-mi mdl)) (max (mdl-ma mdl)) title xlogscale
                        (xlabel "x") (ylabel "count") &allow-other-keys)
   "Plot the data in the list as a histogram.
-When :TITLE is a list, it is concatenated as a STRING
+When :TITLE is a LIST, it is concatenated as a STRING
  and the MDL is appended to it.
 When :MEAN is non-NIL (default), show mean and mean+-standard deviation
  with vertical lines."

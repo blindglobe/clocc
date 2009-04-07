@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.213 2009/01/23 14:28:12 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.214 2009/04/07 02:53:50 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1026,6 +1026,9 @@ FILENAME                 File containing Fortran code
   (clrhash *common-blocks*)
   (clrhash *f2cl-statement-finfo*)
   (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is the do integers
+	;; Fortran defaults to single-float if the number doesn't have
+	;; an exponent marker to say otherwise.
+	(*read-default-float-format* 'single-float)
 	fort-fun *external-function-names*
 	*undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
 	*save_vbles* *key_params* *subprog_common_vars* 
@@ -3180,8 +3183,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.213 2009/01/23 14:28:12 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.214 2009/04/07 02:53:50 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.214  2009/04/07 02:53:50  rtoy
+;;; When reading the Fortran code, we should have
+;;; *read-default-float-format* bound to 'single-float because Fortran
+;;; numbers are single floats unless they have an exponent marker to
+;;; indicate otherwise.
+;;;
 ;;; Revision 1.213  2009/01/23 14:28:12  rtoy
 ;;; PARSE-SAVE needs to check for reserved lisp names to be consistent
 ;;; with other parse routines.

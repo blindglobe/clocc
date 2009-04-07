@@ -1,6 +1,12 @@
 -*- Mode: text -*-
 
 Changes:
+Apr 2009
+--------
+o Bind *READ-DEFAULT-FLOAT-FORMAT* to 'SINGLE-FLOAT when reading the
+  Fortran source because Fortran numbers are single precision unless
+  there's an exponent marker.
+
 Jan 2009
 --------
 o IMPLICIT REAL*8 was not properly handled and treated everything

@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.214 2009/04/07 02:53:50 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.215 2009/04/07 22:05:21 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -599,6 +599,12 @@ FILENAME                 File containing Fortran code
 
 (defun fortran-to-lisp (file ofile &key declaim package options)
   (let ((*package* (find-package :f2cl))
+	;; We need to read in numbers in single-float format because
+	;; Fortran literals are single precision unless an exponent
+	;; marker is given.  However, when writing, we honor
+	;; *float-format* so that the generated output has the desired
+	;; style for printed numbers.
+	(*read-default-float-format* 'single-float)
 	*common_array_dims* *format_stmts* *statement-labels*)
     (when *verbose*
       (format t "beginning the main translation ...~%"))
@@ -1026,9 +1032,6 @@ FILENAME                 File containing Fortran code
   (clrhash *common-blocks*)
   (clrhash *f2cl-statement-finfo*)
   (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is the do integers
-	;; Fortran defaults to single-float if the number doesn't have
-	;; an exponent marker to say otherwise.
-	(*read-default-float-format* 'single-float)
 	fort-fun *external-function-names*
 	*undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
 	*save_vbles* *key_params* *subprog_common_vars* 
@@ -1130,6 +1133,8 @@ FILENAME                 File containing Fortran code
 	  ;; tries very, very hard to make sure what's written is read
 	  ;; back in exactly the same way if *print-readably* is non-NIL.
 	  (*print-readably* nil)
+	  ;; Write out the code using the desired floating-point
+	  ;; format.
 	  (*read-default-float-format* *float-format*))
       (write x :stream o))))
 ;------------------------------------------------------------------------------
@@ -3183,8 +3188,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.214 2009/04/07 02:53:50 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.215 2009/04/07 22:05:21 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.215  2009/04/07 22:05:21  rtoy
+;;; Binding of *read-default-float-format* was in the wrong place.  It
+;;; needs to be in fortran-to-lisp, not translate-and-write-subprog, which
+;;; is too late.
+;;;
 ;;; Revision 1.214  2009/04/07 02:53:50  rtoy
 ;;; When reading the Fortran code, we should have
 ;;; *read-default-float-format* bound to 'single-float because Fortran

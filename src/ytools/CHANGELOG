@@ -1,5 +1,10 @@
-$Id: CHANGELOG,v 2.43 2008/12/14 23:46:55 airfoyle Exp $
+$Id: CHANGELOG,v 2.44 2009/05/27 22:40:56 airfoyle Exp $
             
+2009-05-27: repeat.lisp: Instead of gensyming function name, get it
+               from blecherous ':fcn-name' entry in the alist analyzed
+               for a given (x = ...) repeat var.  (See synchronous
+               entry in changelog for ydecl/repeatdcl.lisp.)
+
             [- Version 2.1.43 -]
 2008-12-14: base.lisp: Defined 'is-even' and 'is-odd' as synonyms for
               'evenp' and 'oddp'.
@@ -561,5 +566,5 @@ $Id: CHANGELOG,v 2.43 2008/12/14 23:46:55 airfoyle Exp $
 
 Local Variables:
 mode:text
-fill-prefix:"            "
+fill-prefix:"              "
 End:

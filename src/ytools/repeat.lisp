@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repeat.lisp,v 2.4 2007/01/29 14:17:24 airfoyle Exp $
+;;;$Id: repeat.lisp,v 2.5 2009/05/27 22:40:57 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -541,7 +541,7 @@
 	    (cons (make-Rep-var-prop 'init (caddr v) 2)
 		  (keyword-args->alist
 		     (cdddr v)
-		     '((:by by) (:to to) :then)
+		     '((:by by) (:to to) :then :fcn-name)
 		     :offset 4))))
       (let ((step (or (lookup-rep-var-prop ':by alist)
 		      (lookup-rep-var-prop ':to alist)))
@@ -558,12 +558,17 @@
 		      (error "Overconstrained 'repeat' var: ~s" v))
 		     ((= modecount 1)
 		      (cond (each-iter
-			     (make-Rep-var
-				'*each-iter
-				var
-				(cons (make-Rep-var-prop
-					 'iterfcnvar (gensym) -1)
-				      alist)))
+                             (let ((fcn-name
+                                      (let ((p (lookup-rep-var-prop
+                                                  ':fcn-name alist)))
+                                         (cond (p (Rep-var-prop-val p))
+                                               (t (gensym))))))
+			        (make-Rep-var
+                                   '*each-iter
+                                   var
+                                   (cons (make-Rep-var-prop
+                                            'iterfcnvar fcn-name -1)
+                                         alist))))
 			    (step
 			     (cond ((lookup-rep-var-prop ':to alist)
 				    (setq alist 
@@ -1086,7 +1091,13 @@
 				     ,@(cond (to `(:to ,(cadr to)))
 					     (t '())))))
 			     (*each-iter
-			      `(= ,(cadr init) :then :again))
+                              (let ((fcn-name (lookup-rep-var-prop
+                                                 ':fcn-name alist)))
+                                 `(= ,(cadr init) :then :again
+                                     ,@(cond (fcn-name
+                                              `(:fcn-name ,(Rep-var-prop-val
+                                                              fcn-name)))
+                                             (t '())))))
 			     (t
 			      (cond (init `(,(cadr init)))
 				    (t '()))))))))

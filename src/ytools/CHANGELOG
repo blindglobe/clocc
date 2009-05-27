@@ -1,5 +1,6 @@
-$Id: CHANGELOG,v 2.44 2009/05/27 22:40:56 airfoyle Exp $
+$Id: CHANGELOG,v 2.45 2009/05/27 22:44:17 airfoyle Exp $
             
+            [- Version 2.1.45 -]
 2009-05-27: repeat.lisp: Instead of gensyming function name, get it
                from blecherous ':fcn-name' entry in the alist analyzed
                for a given (x = ...) repeat var.  (See synchronous

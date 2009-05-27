@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: misc.lisp,v 2.3 2007/06/20 01:09:47 airfoyle Exp $
+;;;$Id: misc.lisp,v 2.4 2009/05/27 22:57:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -138,3 +138,7 @@
 				         " :store-as argument")))
    `(val-or-initialize ,store-place^ :init ,exp^ :missing-if ,uncached-val^))
 
+(defun string-begins (s1 s2)
+   (let ((p (mismatch s1 s2)))
+      (or (not p)
+	  (= p (string-length s2)))))

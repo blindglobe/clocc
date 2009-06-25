@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: misc.lisp,v 2.4 2009/05/27 22:57:04 airfoyle Exp $
+;;;$Id: misc.lisp,v 2.5 2009/06/25 12:26:51 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,7 +13,7 @@
    (export '(out-to-string dbg-out dbg-out-indent
 	     err-out cons-if-new plev plen
 	     classify shorter list-splice is-list-of boole-eq eqn
-	     val-or-initialize memoize-val)))
+	     val-or-initialize memoize-val string-begins)))
 
 (defmacro out-to-string (&rest outargs)
    `(with-output-to-string (string-stream) (out (:to string-stream) ,@outargs)))

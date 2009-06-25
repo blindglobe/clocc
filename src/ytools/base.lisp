@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools -*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 2.8 2008/12/14 23:46:55 airfoyle Exp $
+;;;$Id: base.lisp,v 2.9 2009/06/25 12:26:51 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -667,8 +667,8 @@
 		    (read-char srm)
 		    (list 'empty-list thing))
 		   (t
-		    (cerror "!(~s...) has too much stuff before close paren"
-			    thing)))))))
+		    (error "!(~s...) has too much stuff before close paren"
+			   thing)))))))
 
 
 (set-pprint-dispatch

@@ -175,7 +175,8 @@ At this point the method is executed and then, finally, we're done.
   (sss:dbg "http: reader state=~A, start=~a, string=~S"
 	   (state c) start string)
   (multiple-value-bind (ans err);; since we have trouble with this ...
-      (sss::ignore-errs 
+      (sss::ignore-errs
+       "reader"
        (multiple-value-list
 
 	(cond ((and (eq (state c) :body) (content-length c)
@@ -196,11 +197,11 @@ At this point the method is executed and then, finally, we're done.
 
 
 (defmethod sss:evaler ((c http-connection) string)
+  (sss:dbg "http: evaler state=~A, string=~S" (state c) string)
   (multiple-value-bind
       (ans err)
       (sss::ignore-errs 
-
-       (sss:dbg "http: evaler state=~A, string=~S" (state c) string)
+       "evaler"
        (cond ((eq (state c) :initial)
 	      (multiple-value-bind (found method uri protocol)
 		  (parse-http-command string)
@@ -271,7 +272,8 @@ At this point the method is executed and then, finally, we're done.
 	    (setf (content-length c)
 	      ;; yeah, I know, not correct for Content-Length: (hello)123
 	      (let (*read-eval* val)
-		(setf val (sss::ignore-errs (read-from-string value)))
+		(setf val (sss::ignore-errs "parse-header"
+					    (read-from-string value)))
 		(when (integerp val) val))))
 	  (when (and (string-equal field "Content-type")
 		     (search "multipart/form-data" value :test 'char-equal)
@@ -346,6 +348,7 @@ At this point the method is executed and then, finally, we're done.
 (defun whitespace-p (x) (member x '(#\tab #\space)))
 (defun read-mime-types ()
   (sss::ignore-errs ;; in case file is not there or unreadable or ...
+   "read-mime-types"
    (with-open-file (f *mime-type-file*)
      (let (line type pos1 pos2)
        (loop while (setf line (read-line f nil nil)) do
@@ -389,7 +392,7 @@ At this point the method is executed and then, finally, we're done.
       *server-root*))
   (setf file (merge-pathnames (pathname (subseq (uri c) 1)) root))
   (when
-      (let ((probe (probe-file file)))
+      (let ((probe (ignore-errors (probe-file file)))) ;; err on #P"/root/www/"
 	(or (not probe)
 	    (< (length (pathname-directory probe))
 	       (length (pathname-directory root)))
@@ -410,6 +413,9 @@ At this point the method is executed and then, finally, we're done.
       (setf ctype (gethash (string-downcase ptype) *mime-types* "text/plain"))
       (sss:send-string c "HTTP/1.0 200 OK") (crlf c)
       (sss:send-string c (format nil "Content-Type: ~A" ctype))
+      (crlf c)
+      (sss:send-string c (format nil "Content-Length: ~A"
+				 (with-open-file (f file)(file-length f))))
       (crlf c)
       (sss:send-string c (format nil "Date: ~A" (rfc1123-date)))
       (crlf c)
@@ -456,26 +462,28 @@ At this point the method is executed and then, finally, we're done.
 (defun parse-form-contents (contents &optional boundary)
   (multiple-value-bind
       (ans err)
-      (sss::ignore-errs 
-	(when boundary
-	  (return-from parse-form-contents
-	    (parse-form-contents-boundary contents boundary)))
-	;; input values come in the pairs name=value, delimited by & name is a
-	;; "name" specified in the HTML form value is the string input or
-	;; selection by the user on this form special cases like ? and & are
-	;; ignored in this parser.
-	;; return a list of dotted pairs (("name" . "value") ....)
-	(loop
-	  with len = (length contents)
-	  with start = 0
-	  for sep = (position #\& contents :start start)
-	  for end = (or sep len)
-	  for varend = (position #\= contents :start start)
-	  for sym = (subseq contents start varend)
-	  for val = (subseq contents (if varend (1+ varend) end) end)
-	  collect (cons sym (html-to-ascii val))
-	  until (null sep)
-	  do (setq start (1+ sep))))
+      (sss::ignore-errs
+       "parse-form-contents"
+	(progn
+	  (when boundary
+	    (return-from parse-form-contents
+	      (parse-form-contents-boundary contents boundary)))
+	  ;; input values come in the pairs name=value, delimited by & name is a
+	  ;; "name" specified in the HTML form value is the string input or
+	  ;; selection by the user on this form special cases like ? and & are
+	  ;; ignored in this parser.
+	  ;; return a list of dotted pairs (("name" . "value") ....)
+	  (loop
+	    with len = (length contents)
+	    with start = 0
+	    for sep = (position #\& contents :start start)
+	    for end = (or sep len)
+	    for varend = (position #\= contents :start start)
+	    for sym = (subseq contents start varend)
+	    for val = (subseq contents (if varend (1+ varend) end) end)
+	    collect (cons sym (html-to-ascii val))
+	    until (null sep)
+	    do (setq start (1+ sep)))))
     (when err (logform (list :http :parse-form-contents-err
 			     (format nil "~a" err) contents boundary)))
     ans))

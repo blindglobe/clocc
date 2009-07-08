@@ -351,9 +351,9 @@ from line will be in the message delivered to each user.
       (if (> x y) (return nil)))))
 
 ;; ==== debugging ====
-(defmacro ignore-errs (form)
+(defmacro ignore-errs (from form)
   ;; use the one in sss now
-  `(sss::ignore-errs ,form))
+  `(sss::ignore-errs ,from ,form))
 
 ;; Much of this is explained in sss 
 
@@ -392,16 +392,19 @@ from line will be in the message delivered to each user.
 (defun show-connection (&optional (stream t) &aux c)
   (declare (special sss::connection reverse-path forward-path))
   ;; sss::connection is special bound by process-connection
-  (setf c sss::connection)
-  (ignore-errors ;; in case no longer connected
-    (format stream " ~A" (list-bytes (sss:connection-ipaddr c))))
-  ;; look at bindings rather than just variables
-  ;; in case they were bound by this invocation of process-connection
-  (let ((b (assoc 'reverse-path (sss:bindings c))))
-    (when b (format stream " from ~A" (cdr b))))
-  #+ignore ;; actually, don't show forward path for every message
-  (let ((b (assoc 'forward-path (sss:bindings c))))
-    (when b (format stream " to ~A" (cdr b)))))
+  ;; !!! But not in all contexts!! only in reader/evaler/printer
+  (cond ((boundp 'sss::connection)
+	 (setf c sss::connection)
+	 (ignore-errors;; in case no longer connected
+	   (format stream " ~A" (list-bytes (sss:connection-ipaddr c))))
+	 ;; look at bindings rather than just variables
+	 ;; in case they were bound by this invocation of process-connection
+	 (let ((b (assoc 'reverse-path (sss:bindings c))))
+	   (when b (format stream " from ~A" (cdr b))))
+	 #+ignore ;; actually, don't show forward path for every message
+	 (let ((b (assoc 'forward-path (sss:bindings c))))
+	   (when b (format stream " to ~A" (cdr b)))))
+	(t (format stream " <no connection>"))))
 
 (defvar *mydomain*)
 ;; I see no general way to set this - have to leave it to user
@@ -644,6 +647,7 @@ has been an helo/ehlo since they were last set
 	(return-from mail nil))
       (unless (integerp (setf arg2
 			  (ignore-errs
+			   "mail-read-int"
 			   (let (*read-eval*)
 			     (read-from-string arg2 nil nil :start 5)))))
 	(send-string-crlf+ connection
@@ -717,11 +721,15 @@ has been an helo/ehlo since they were last set
 	  cf-data (user-data user :cf)
 	  adr-data (user-data user :adr)
 	  ac-data (user-data user :ac))
-    (let ((mode (ignore-errs (cadr (assoc :mode cf-data)))) accept t-acc err)
+    (let ((mode (ignore-errs
+		 "rcpt-get-mode"
+		 (cadr (assoc :mode cf-data))))
+	  accept t-acc err)
       (unless (or (eql mode :on) (eql mode :training)) (setf mode :off))
       (cond ((eql mode :off) (setf accept t))
 	    ((multiple-value-setq (t-acc err)
 	       (ignore-errs
+		"rcpt-get-adr"
 		(loop for adr in adr-data thereis
 		      (and (string-equal to (car adr))
 			   (or (null (cadr adr)) ;; permanent
@@ -732,7 +740,7 @@ has been an helo/ehlo since they were last set
 			      user err))
 	     (setf accept t))
 	    ((eql (multiple-value-setq (t-acc err)
-		    (ignore-errs (test-accept ac-data)))
+		    (ignore-errs "rcpt-test-accept" (test-accept ac-data)))
 		  :accept)
 	     (setf accept t))
 	    ((eql t-acc :reject)
@@ -811,6 +819,7 @@ has been an helo/ehlo since they were last set
 	(when (> (file-write-date userfile) (car data))
 	  (multiple-value-bind (ans err)
 	      (ignore-errs
+	       "user-data"
 	       (with-open-file (x userfile)
 		 (setf data (cons (file-write-date userfile)
 				  (let (*read-eval*) (read x)))
@@ -899,7 +908,8 @@ has been an helo/ehlo since they were last set
 	 ;; number of entries with same first n bytes
 	 (now (get-universal-time))
 	 (expire 
-	  (let ((assoc (ignore-errs (cadr (assoc :expire cf-data)))))
+	  (let ((assoc (ignore-errs "test-password-get-expire"
+				    (cadr (assoc :expire cf-data)))))
 	    (if (numberp assoc) assoc (* 7 24 3600)))) ;; default 1 week
 	 limits cflimits)
     ;; validate the data even though nobody else should write it
@@ -949,7 +959,8 @@ has been an helo/ehlo since they were last set
     (loop for i below 5 as nb in '(0 8 16 24 32)
 	as default in '(32 16 8 4 2) do
 	  (setf (aref limits i)
-	    (let ((l (ignore-errs (cadr (assoc nb cflimits :test '=)))))
+	    (let ((l (ignore-errs "test-password-get-limits"
+				  (cadr (assoc nb cflimits :test '=)))))
 	      (if (numberp l) l default))))
     (loop for i below 5 when (>= (aref matchn i) (aref limits i)) do
 	  (push (list

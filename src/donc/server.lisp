@@ -175,19 +175,25 @@ code.
 
 ;; debugging support
 (defvar *ignore-errs-p* t) ;; [***] set to nil for serious debugging
-(defmacro ignore-errs (&rest forms)
-  `(flet ((f () .,forms))
+(defmacro ignore-errs (from form)
+  `(flet ((f () ,form))
      (if *ignore-errs-p*
 	 ;; it's dangerous to ignore errors without even logging
+	 ;; 2008 - it's also dangerous to log errors in an infinite loop!
 	 (multiple-value-bind
 	   (ans err)
 	   (ignore-errors (multiple-value-list (f)))
-	   (when err (log-err (format nil "ignore error ~a" err)))
-	   (values-list ans))
+	   (when err (log-err (format nil "ignore error from ~a ~a" ,from err)))
+	   (if err (values ans err) (values-list ans)))
        (f))))
 
+(defun show-ut (&optional (ut (get-universal-time))) 
+  (multiple-value-bind 
+   (s m h d mo y) (decode-universal-time ut) 
+   (format nil "~d/~d/~d ~2,'0d:~2,'0d:~2,'0d" y mo d h m s)))
+
 (defun log-err (string) ;; [***] meant to be replaced by application
-  (format t "~%~a" string))
+  (format t "~%~a ~a" (show-ut) string))
 
 (defvar *debug* nil) ;; set to T for debugging output [***]
 (defvar *debug2* nil) ;; more selective debugging
@@ -257,6 +263,7 @@ code.
 
 (defun accept-connection (server) ;; not implemented in port
   (ignore-errs
+   "accept-connection"
    #+clisp
    (when (socket:SOCKET-WAIT server 0)
      (make-instance (connection-class (socket:socket-server-port server))
@@ -347,6 +354,7 @@ code.
 	;; now check for new connections
 	(loop for s in *servers* do
 	      (ignore-errs
+	       "serve" ;; ***** SSS:CONNECTION has no value -> loops
 	       (let ((new (accept-connection s)))
 		 (when new
 		   (setf done-anything t)
@@ -371,10 +379,12 @@ code.
 		 (if (output c) (if (slot-value c 'done) :output :io) :input)))
 	 ;; if we have pending output then wait for the stream to be
 	 ;; either readable or writable, else just readable
-	 (if time
-	     (multiple-value-bind (a b) (floor time)
-	       (ext:socket-status *socket-status-arg* a (round (* b 1e6))))
-	   (ext:socket-status *socket-status-arg*))))
+	 (ignore-errs
+	  "wait" ;; not an open stream -- doesn't cause loops
+	  (if time
+	      (multiple-value-bind (a b) (floor time)
+		(ext:socket-status *socket-status-arg* a (round (* b 1e6))))
+	    (ext:socket-status *socket-status-arg*)))))
 	       
 
 ;; Support for IO
@@ -444,6 +454,7 @@ code.
 (defun process-output (connection)
   (multiple-value-bind (val err)
     (ignore-errs
+     "process-output" ;; unix errors - don't cause loops
        (when (output connection)
 	(let* ((stream (sstream connection))
 	       (out (car (output connection)))
@@ -529,6 +540,7 @@ code.
   #+clisp ;; all input will be in binary
   (setf (stream-element-type (sstream c)) '(unsigned-byte 8))
   (ignore-errs;; in case stream closes while reading
+   "process-input" ;; ***** variable SSS:CONNECTION has no value
    ;; Luckily read-char-no-hang on a closed stream => eof
    #+clisp
    (loop with stream = (sstream c)
@@ -538,7 +550,11 @@ code.
        (ext:read-byte-sequence
 	*byte-io-vector* (sstream c) :no-hang t
 	:end limit)
-       do (vector-push-extend (code-char (aref *byte-io-vector* i)) (input c))
+       do (vector-push-extend (code-char (aref *byte-io-vector* i)) (input c)
+			      ;; in clisp 2.41 this prevents overflow
+			      ;; max length = 4M-1, it gets up to 2M and then
+			      ;; the next push errors
+			      (max 1 (min (length (input c)) 1000000)))
        finally
        (let ((*debug* *debug2*))(dbg "read-byte-sequence read ~A bytes" i))
        (when (member (socket:SOCKET-STATUS stream 0) '(:eof :append))
@@ -613,7 +629,8 @@ code.
 (defgeneric accept-p (connection))
 (defmethod accept-p (connection)
   ;; here's my default method
-  (let ((complaint (reason-not-to-accept connection)))
+  (let ((complaint (ignore-errs "accept-p" (reason-not-to-accept connection))))
+    ;; errors trying to get ip addr when a connection is closed
     (if complaint
 	(progn (send-string connection (format nil "~A" complaint)) nil)
       t)))
@@ -651,7 +668,7 @@ code.
 
 ;; the real one
 (defun disconnect-connection (connection)
-  (ignore-errs (shut-down-connection connection))
+  (ignore-errs "disconnect-connection" (shut-down-connection connection))
   ;; ignore errors in case you try to print to a closed connection
   ;; Of course, if you fail to close it, you're going to run out of fd's !
   (setf *connections* (delete connection *connections*))
@@ -715,7 +732,7 @@ function is also error protected.
   (when (and (slot-value c 'done) (null (output c)))
     ;; redhat 6.2 closes with rst instead of fin if there's unread input !
     ;; this process-input just reduces the chance that this will happen
-    (process-input c)
+    (process-input c) ;; ***** need to bind connection?
     (disconnect-connection c))
   (unless (slot-value c 'done)
     (setf more2do (or (process-input c) more2do)))
@@ -764,6 +781,8 @@ function is also error protected.
 	     (dbg "evaler ~s" input)
 	     ;; These bindings seem reasonable defaults.
 	     ;; They can be overridden by the evaler
+	     (ignore-errs "call-evaler" (setf output (evaler c input)))
+	     #+ignore 
 	     (multiple-value-setq (output err)
 	       ;; This one is *NOT* ignore-errs - we need the error result
 	       (ignore-errors

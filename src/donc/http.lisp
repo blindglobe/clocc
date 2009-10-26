@@ -430,18 +430,22 @@ At this point the method is executed and then, finally, we're done.
   (sss:done c))
 
 (defun do-post (c &aux (uri (uri c))
-		       (args (parse-form-contents
-			      (body c)
-			      ;; see rfc 1521
-			      (when (boundary c)
-				(concatenate 'string "--" (boundary c))))))
+                  (pos (position #\? uri))
+                  (args (parse-form-contents
+                         (body c)
+                         ;; see rfc 1521
+                         (when (boundary c)
+                           (concatenate 'string "--" (boundary c))))))
   (logform (list :http (print-current-time nil)
-		 (peer-ip-port c) :post uri
-		 (limit-print args)))
+                 (peer-ip-port c) :post uri
+                 (limit-print args)))
   (sss:dbg "http: post uri=~A args=~A" uri (limit-print args))
+  ;; 2009/10/25 seems that some calls to post also use ?args
   (post-method c
-	       ;; this is supposed to let you specialize on (eql :|/foo|)
-	       (intern uri :keyword) args))
+               ;; this is supposed to let you specialize on (eql :|/foo|)
+               (intern (subseq uri 0 pos) :keyword)
+               (append (when pos (parse-form-contents (subseq uri (1+ pos))))
+                       args)))
 
 ;; *** you may want to define methods for post-method
 

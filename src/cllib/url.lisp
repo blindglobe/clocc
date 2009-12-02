@@ -1,10 +1,10 @@
 ;;; url - handle url's and parse HTTP
 ;;;
-;;; Copyright (C) 1998-2008 by Sam Steingold
+;;; Copyright (C) 1998-2009 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2+)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.67 2008/09/24 16:46:42 sds Exp $
+;;; $Id: url.lisp,v 2.68 2009/12/02 16:30:02 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -390,6 +390,7 @@ When FINISH-P is non-NIL, a final CRLF is also issued."
     (finish-output sock)))
 
 (defun open-url (url &key ((:err *url-error*) *url-error*)
+                 ((:out *url-output*) *url-output*)
                  ((:init *url-open-init*)  *url-open-init*)
                  ((:nntp-server *nntp-server*) *nntp-server*)
                  ((:sleep *url-sleep*) *url-sleep*)
@@ -464,7 +465,8 @@ the error `timeout' is signaled."
   "The time when the current connection was open.")
 (makunbound '*url-opening-time*)
 
-(defmacro with-open-url ((socket url &key (rt '*readtable*) err
+(defmacro with-open-url ((socket url &key (rt '*readtable*)
+                                 (err '*url-error*) (out '*url-output*)
                                  (max-retry '*url-max-retry*)
                                  (timeout '*url-timeout*)
                                  (init '*url-open-init*))
@@ -475,7 +477,7 @@ ERR is the stream for information messages or NIL for none."
   (with-gensyms ("WOU-" uuu)
     `(let* ((,uuu (url ,url)) (*readtable* ,rt) (*url-max-retry* ,max-retry)
             (*url-timeout* ,timeout) (*url-error* ,err) (*url-open-init* ,init)
-            (,socket (open-url ,uuu))
+            (*url-output* ,out) (,socket (open-url ,uuu))
             (*url-opening-time* (get-int-time nil))
             (*url-bytes-transferred* 0))
       (declare (type url ,uuu) (type socket ,socket))

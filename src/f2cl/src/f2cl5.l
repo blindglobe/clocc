@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.200 2009/01/19 02:38:17 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.201 2009/12/14 22:36:46 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2012,7 +2012,7 @@
 	      (let (array-data-forms)
 		(flet ((find-type (a)
 			 (dolist (x (rest (first formal-arg-decls)))
-			   (when (member a x)
+			   (when (member a (cddr x))
 			     (return-from find-type (second (second x))))
 			   t)))
 		  (dolist (a arrays)
@@ -2057,7 +2057,7 @@
 	   ;;(format t "new-prog-bit = ~A~%" prog-bit)
 
 	   (setf prog-bit (generate-with-array array-args prog-bit)))
-	 ;;(format t "new-prog-bit = ~A~%" prog-bit)
+	   ;;(format t "new-prog-bit = ~A~%" prog-bit)
 		 
 	 ))
 
@@ -3847,8 +3847,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.200 2009/01/19 02:38:17 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.201 2009/12/14 22:36:46 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.201  2009/12/14 22:36:46  rtoy
+;;; GENERATE-WITH-ARRAY in INSERT-DECLARATIONS was figuring out the type
+;;; of strings incorrectly.
+;;;
 ;;; Revision 1.200  2009/01/19 02:38:17  rtoy
 ;;; The number of repetitions for the D format descriptor should default
 ;;; to 1, not NIL, like we do for E, F, and G.

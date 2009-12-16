@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.14 2009/12/16 22:00:56 airfoyle Exp $
+;;;$Id: debug-new.lisp,v 2.1 2009/12/16 22:00:55 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -675,23 +675,26 @@
 ;;; (throw 'test-abort [true|false]) then the innermost call to 'test'
 ;;; returns with the given value.
 (defmacro check (form &rest msgstuff)
-   (!= msgstuff (remove ':else *-*))
-   (let ((else-stuff-0 (memq ':else msgstuff))
+;;;;   (!= msgstuff (remove ':else *-*))
+   (let ((else-stuff (repeat :for ((e :in msgstuff :tail el))
+                      :result false
+                      :until (memq e '(:else :if-not :if-fail :oops))
+                      :result el))
          (out-stuff (memq ':out msgstuff)))
-      (cond ((and else-stuff out-stuff
-                  (memq ':else out-stuff))
-             (signal-problem check
-                ":out comes before :else in check macro")))
-      (let ((else-stuff
-               (cond ((and else-stuff-0 out-stuff)
-                      (ldiff else-stuff-0 out-stuff))
-                     (t else-stuff-0))))
+      (let ((else-flag (car else-stuff)))
+         (cond ((and else-stuff 
+                     (memq else-flag out-stuff))
+                (signal-problem check
+                   ":out comes before " else-flag " in check macro")))
+         (cond ((and else-stuff out-stuff)
+                (!= else-stuff 
+                    (ldiff else-stuff out-stuff))))
          (multi-let (((first-stuff out-stuff)
                       (cond (else-stuff
                              (match-cond else-stuff
                                 (out-stuff
                                  (values (cdr else-stuff) (cdr out-stuff)))
-                                (:? (:else (dbg-save ?@s) ?@e)
+                                (:? (?,else-flag (dbg-save ?@s) ?@e)
                                    (values `((dbg-save ,@s))
                                            e))
                                 (t (values !() (cdr else-stuff)))))

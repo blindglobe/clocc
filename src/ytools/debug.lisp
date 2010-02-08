@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.14 2009/12/16 22:00:56 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.15 2010/02/08 14:09:52 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -13,7 +13,8 @@
 (eval-when (:slurp-toplevel :load-toplevel)
    (export '(s sv ps ss dbg-stack* dbg-save st g gty package seek ev ev-ugly
 	     get-frame-args
-	     symshow =g htab-show file-show test check break-on-test-failure*
+	     symshow =g htab-show file-show
+             check-count* test check break-on-test-failure*
 	     condition-display-string sym-val)))
 
 (needed-by-macros
@@ -520,7 +521,8 @@
                 (t
                  (out pkgname " is not the name of a package" :%))))))
 
-;;; Push first subform of exp beginning with sym onto dbg-stack*
+;;; Push num'th subform (zero-based) of exp beginning with sym onto dbg-stack*.
+;;; If no such form, return nil and push nothing.
 (defun seek (sym &optional (num 0) (exp (g *)) (label '*))
    (let-fun ((sk (e)
 	       (cond ((atom e) false)
@@ -675,47 +677,51 @@
 ;;; (throw 'test-abort [true|false]) then the innermost call to 'test'
 ;;; returns with the given value.
 (defmacro check (form &rest msgstuff)
-   (!= msgstuff (remove ':else *-*))
-   (let ((else-stuff-0 (memq ':else msgstuff))
+;;;   (!= msgstuff (remove ':else *-*))
+   (let ((else-stuff-0 (repeat :for ((e :in msgstuff :tail el))
+                        :result false
+                        :until (memq e '(:else :if-not :if-fail :oops))
+                        :result el))
          (out-stuff (memq ':out msgstuff)))
-      (cond ((and else-stuff out-stuff
-                  (memq ':else out-stuff))
-             (signal-problem check
-                ":out comes before :else in check macro")))
-      (let ((else-stuff
+      (let ((else-flag (car else-stuff-0)))
+         (cond ((and else-stuff-0 out-stuff
+                     (memq else-flag out-stuff))
+                (signal-problem check
+                   ":out comes before " else-flag " in check macro")))
+         (let ((else-stuff
                (cond ((and else-stuff-0 out-stuff)
                       (ldiff else-stuff-0 out-stuff))
                      (t else-stuff-0))))
-         (multi-let (((first-stuff out-stuff)
-                      (cond (else-stuff
-                             (match-cond else-stuff
-                                (out-stuff
-                                 (values (cdr else-stuff) (cdr out-stuff)))
-                                (:? (:else (dbg-save ?@s) ?@e)
-                                   (values `((dbg-save ,@s))
-                                           e))
-                                (t (values !() (cdr else-stuff)))))
-                            (out-stuff
-                             (values !() (cdr out-stuff)))
-                            (t
-                             (values !() msgstuff)))))
-            (cond ((not (null out-stuff))
-                   (!= out-stuff `(": " ,@*-*))))
-            (let ((srmvar (gensym)))
-               `(progn
-                   (!= check-count* (+ *-* 1))
-         ;;;;	  (out "check-count* = " check-count* :%)
-                   (cond ((not ,form)
-                          ,@first-stuff
-                          (let ((cc check-count*))
-                             (signal-problem :noplace
-                                :class Test-failure
-                                :description
-                                    (make-Printable
-                                        (\\ (,srmvar)
-                                           (out (:to ,srmvar)
-                                               1 cc ,@out-stuff)))
-                                :proceed))))))))))
+            (multi-let (((first-stuff out-stuff)
+                         (cond (else-stuff
+                                (match-cond else-stuff
+                                   (out-stuff
+                                    (values (cdr else-stuff) (cdr out-stuff)))
+                                   (:? (:else (dbg-save ?@s) ?@e)
+                                      (values `((dbg-save ,@s))
+                                              e))
+                                   (t (values !() (cdr else-stuff)))))
+                               (out-stuff
+                                (values !() (cdr out-stuff)))
+                               (t
+                                (values !() msgstuff)))))
+               (cond ((not (null out-stuff))
+                      (!= out-stuff `(": " ,@*-*))))
+               (let ((srmvar (gensym)))
+                  `(progn
+                      (!= check-count* (+ *-* 1))
+            ;;;;	  (out "check-count* = " check-count* :%)
+                      (cond ((not ,form)
+                             ,@first-stuff
+                             (let ((cc check-count*))
+                                (signal-problem :noplace
+                                   :class Test-failure
+                                   :description
+                                       (make-Printable
+                                           (\\ (,srmvar)
+                                              (out (:to ,srmvar)
+                                                  1 cc ,@out-stuff)))
+                                   :proceed)))))))))))
 
 (define-out-operator (:val= cmd stream)
    (let ((format-control-string

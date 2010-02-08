@@ -1,5 +1,9 @@
-$Id: CHANGELOG,v 2.47 2009/06/25 12:26:51 airfoyle Exp $
+$Id: CHANGELOG,v 2.48 2010/02/08 14:09:52 airfoyle Exp $
             
+2010-02-08: debug.lisp: Improved 'test' macro by allowing keywords to
+              clarify what the body means.  Also exports check-count*
+              from ytools package.
+
             [- Version 2.1.47 -]
 2009-06-24: misc.lisp: Exported 'string-begins'
             base.lisp: In '\(-excl-dispatch', changed 'cerror' to

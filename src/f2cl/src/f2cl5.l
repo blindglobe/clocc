@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.203 2010/02/23 03:37:24 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.204 2010/02/23 05:21:30 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2518,11 +2518,11 @@
 	    `(declare (type ,type ,vble_name)))))
      ;; otherwise use default declaration
      (t
-      ;;(format t "default decl~%")
       (let ((limit (when parameterp
 		     `(,parameterp ,parameterp))))
+	;;(format t "default decl ~A, limit = ~A~%" vble limit)
 	(if (default-int-p vble)
-	    `(declare (type (integer ,@limit) ,vble_name))
+	    `(declare (type (integer4 ,@limit) ,vble_name))
 	    `(declare (type (,(maybe-promote-type 'single-float) ,@limit) ,vble_name)))))))))
 
 (defun make-char-decl (decl type)
@@ -3850,8 +3850,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.203 2010/02/23 03:37:24 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.204 2010/02/23 05:21:30 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.204  2010/02/23 05:21:30  rtoy
+;;; Fix declaration for default integer type.  Previously the type was
+;;; INTEGER but it should have been INTEGER4.
+;;;
 ;;; Revision 1.203  2010/02/23 03:37:24  rtoy
 ;;; Add :PROMOTE-TO-DOUBLE option to promote all single precision
 ;;; variables and constants to double precision.

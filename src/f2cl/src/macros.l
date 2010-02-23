@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1.112 2009/01/08 12:57:19 rtoy Exp $")
+  "$Id: macros.l,v 1.113 2010/02/23 00:59:12 rtoy Exp $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -1462,11 +1462,97 @@ causing all pending operations to be flushed"
   (unless *stop-signals-error-p*
     (cerror "Continue anyway" "STOP reached")))
 
+(defmacro f2cl-copy-seq (dst src dst-type src-type)
+  (flet ((copy-error ()
+	   (error "F2CL cannot copy arrays of element type ~A to ~A~%"
+		  src-type dst-type)))
+    (cond ((subtypep dst-type 'float)
+	   ;; Copy to float array
+	   (cond ((subtypep src-type 'float)
+		  `(replace ,dst ,src))
+		 ((subtypep src-type 'complex)
+		  ;; Copy complex to float by putting each real and
+		  ;; imaginary part into the float array, in order.
+		  (let ((idx (gensym "IDX-"))
+			(el (gensym "EL-")))
+		    `(loop for ,idx of-type fixnum from 0 by 2 below (length ,dst)
+			for ,el of-type ,src-type across ,src
+			do
+			(progn
+			  (setf (aref ,dst ,idx) (realpart ,el))
+			  (setf (aref ,dst (1+ ,idx)) (imagpart ,el))))))
+		 (t
+		  (copy-error))))
+	  ((subtypep dst-type 'complex)
+	   ;; Copy to complex array
+	   (cond ((subtypep src-type 'float)
+		  (let ((idx (gensym "IDX-"))
+			(dst-idx (gensym "DST-IDX-")))
+		    `(loop for ,idx of-type fixnum from 0 by 2 below (length ,src)
+			for ,dst-idx of-type fixnum from 0 below (length ,dst)
+			do
+			(setf (aref ,dst ,dst-idx) (complex (aref ,src ,idx)
+							    (aref ,src (1+ ,idx)))))))
+		 ((subtypep src-type 'complex)
+		  `(replace ,dst ,src))
+		 (t
+		  (copy-error))))
+	  (t
+	   (copy-error)))))
+
+(defun make-compatible-seq (type array)
+  (let ((element-type (second type))
+	(array-type (array-element-type array))
+	(len (length array)))
+    (cond ((subtypep element-type 'float)
+	   (cond ((subtypep array-type 'complex)
+		  (make-array (* 2 len) :element-type element-type))
+		 (t
+		  (make-array len :element-type element-type))))
+	  ((subtypep element-type 'complex)
+	   (cond ((subtypep array-type 'complex)
+		  (make-array len :element-type element-type))
+		 (t
+		  (make-array (ceiling len 2) :element-type element-type))))
+	  (t
+	   (error "Don't know how to make an array with element-type ~A~%" element-type)))))
+
+
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.112 2009/01/08 12:57:19 rtoy Exp $
+;;; $Id: macros.l,v 1.113 2010/02/23 00:59:12 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.113  2010/02/23 00:59:12  rtoy
+;;; Support the Fortran capability of passing an array of one type
+;;; to a routine expecting a different type.  Currently only supports REAL
+;;; and COMPLEX arrays (and their double precison versions).
+;;;
+;;; NOTES:
+;;; o Update
+;;;
+;;; f2cl0.l:
+;;; o Export new symbols f2cl-copy-seq and make-compatible-seq.
+;;;
+;;; f2cl1.l:
+;;; o New variable *copy-array-parameter* for keeping track of the option
+;;;   for f2cl and f2cl-compile.
+;;; o Update f2cl and f2cl-compile to recognize :copy-array-parameter.
+;;; o Modify massage-arglist and generate-call-to-routine to handle the
+;;;   new :copy-array-parameter capability.
+;;;
+;;; f2cl5.l:
+;;; o Fix issue where quoted elements were modified.  They shouldn't be.
+;;; o Fix issue where (array simple-float (*)) would get erroneously
+;;;   converted to (array simple-float (f2cl-lib:int-mul)).  We want to
+;;;   leave bare * alone.
+;;;
+;;; macros.l:
+;;; o New macro f2cl-copy-seq to generate code to copy a sequence
+;;;   appropriately.
+;;; o New function to create a compatible array to support
+;;;   :copy-array-parameter.
+;;;
 ;;; Revision 1.112  2009/01/08 12:57:19  rtoy
 ;;; f2cl0.l:
 ;;; o Export *STOP-SIGNALS-ERROR-P*

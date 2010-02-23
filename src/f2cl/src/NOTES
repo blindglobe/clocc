@@ -1,6 +1,18 @@
 -*- Mode: text -*-
 
 Changes:
+Feb 2010
+--------
+o Some old-style Fortran code passes arrays of different types to
+  routines expecting a different type.  For example, passing a COMPLEX
+  array to a routine expecting a REAL array.  This works in Fortran,
+  but not in Lisp.  To solve this, f2cl will now create a new array of
+  the correct type, copy the elements of the original array into it,
+  call the routine, and then copy the results back.  This feature is
+  controlled by :copy-array-parameter and defaults to off.  Currently,
+  this only works for converting REAL arrays to COMPLEX arrays and
+  vice versa.
+
 Apr 2009
 --------
 o Bind *READ-DEFAULT-FLOAT-FORMAT* to 'SINGLE-FLOAT when reading the

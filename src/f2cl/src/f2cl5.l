@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.201 2009/12/14 22:36:46 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.202 2010/02/23 00:59:12 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -520,6 +520,9 @@
 	((eq (first p) 'declare)
 	 ;; Skip over declarations
 	 p)
+	((eq (first p) 'quote)
+	 ;; Skip over quoted objects
+	 p)
         ((eq (first p) 'fdo)
          ;; FDO handled specially
          (destructuring-bind (fdo (var1 init step-form)
@@ -562,7 +565,8 @@
 	((eq (first p) 'truncate)
 	 ;; Hmm, make sure truncate returns a integer4
 	 `(the integer4 ,p))
-	((member (first p) '(+ - *))
+	((and (member (first p) '(+ - *))
+	      (rest p))
 	 ;; Basic arithmetic operations.  Division has already been
 	 ;; handled by converting / to f2cl/ which is optimized
 	 ;; somewhere else.
@@ -579,7 +583,6 @@
 						(- . int-sub)
 						(* . int-mul))))
 			(first p))))
-	   ;;(format t "fun = ~A~%" fun)
 	   `(,fun ,@(mapcar #'optimize-integer-arithmetic (rest p)))))
 	((listp (first p))
 	 `(,(mapcar #'optimize-integer-arithmetic
@@ -3847,8 +3850,38 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.201 2009/12/14 22:36:46 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.202 2010/02/23 00:59:12 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.202  2010/02/23 00:59:12  rtoy
+;;; Support the Fortran capability of passing an array of one type
+;;; to a routine expecting a different type.  Currently only supports REAL
+;;; and COMPLEX arrays (and their double precison versions).
+;;;
+;;; NOTES:
+;;; o Update
+;;;
+;;; f2cl0.l:
+;;; o Export new symbols f2cl-copy-seq and make-compatible-seq.
+;;;
+;;; f2cl1.l:
+;;; o New variable *copy-array-parameter* for keeping track of the option
+;;;   for f2cl and f2cl-compile.
+;;; o Update f2cl and f2cl-compile to recognize :copy-array-parameter.
+;;; o Modify massage-arglist and generate-call-to-routine to handle the
+;;;   new :copy-array-parameter capability.
+;;;
+;;; f2cl5.l:
+;;; o Fix issue where quoted elements were modified.  They shouldn't be.
+;;; o Fix issue where (array simple-float (*)) would get erroneously
+;;;   converted to (array simple-float (f2cl-lib:int-mul)).  We want to
+;;;   leave bare * alone.
+;;;
+;;; macros.l:
+;;; o New macro f2cl-copy-seq to generate code to copy a sequence
+;;;   appropriately.
+;;; o New function to create a compatible array to support
+;;;   :copy-array-parameter.
+;;;
 ;;; Revision 1.201  2009/12/14 22:36:46  rtoy
 ;;; GENERATE-WITH-ARRAY in INSERT-DECLARATIONS was figuring out the type
 ;;; of strings incorrectly.

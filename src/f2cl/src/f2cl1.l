@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.215 2009/04/07 22:05:21 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.216 2010/02/23 00:59:12 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -178,6 +178,17 @@ incorrect, so use caution.")
   "List of equivalenced variables.  Each entry of the list is a list
   consisting of the equivalenced variables.")
 
+(defvar *copy-array-parameter* nil
+  "If non-NIL, array arguments are copied if the actual array element
+  type is not the same type as the declared array element type.  This
+  happens in some Fortran code where, say, an array of REALs is given
+  to a routine expecting COMPLEXs.  When *COPY-ARRAY-PARAMETER* is
+  non-NIL, F2CL will copy the actual array to a temporary array of the
+  correct type, pass that to the routine and then copy the result back
+  to the original array.  This is currently only implemented when
+  passing a REAL/REAL*8 array to a COMPLEX/COMPLEX*16 array and
+  vice-versa. ")
+
 ;; For some reason Allegro needs this eval-when because it complains
 ;; about undefined slot accessors without this.
 (eval-when (compile load eval)
@@ -240,60 +251,65 @@ correctly"
 	     (float-format *read-default-float-format*)
 	     common-as-array
 	     common-block-file
+	     copy-array-parameter
 	     &allow-other-keys)
   "Fortran to Common Lisp converter
 
-INPUT-FILE               File containing Fortran code
+  INPUT-FILE               File containing Fortran code
 
-:OUTPUT-FILE             File to contain Lisp code
+  :OUTPUT-FILE             File to contain Lisp code
 
-:VERBOSE                 verbose output. Default = NIL.
-:PRUNE-LABELS            Prune unused labels. Default = NIL.
-:INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be
-                          buggy.) Default = NIL
-:AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
-                         Default = T.
-:RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal
-                         parameters to functions. That is, any array
-                         length declarations are ignored if possible,
-                         like old Fortran used to. Default = T.
-:COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements
-                          automatically coerce the RHS to the
-                          appropriate type for the assignment.  If NIL
-                          or :NEVER, coercion never happens.
-                          Otherwise, coercion happens as needed.  The
-                          Default = :AS-NEEDED
-:EXTENSION               The extension to use for the output file, if needed.
-                          Defaults to *DEFAULT-LISP-EXTENSION* or \"lisp\"
-:KEEP-TEMP-FILE          If T, the temporary file is not deleted.
-                          Default = NIL.
-:ARRAY-TYPE              The type of array f2cl should use.  Should be
-                          :simple-array or :array.
-:ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an
-                          array reference in a call to a subroutine or
-                          function, we are really passing a subarray
-                          to the routine instead of just the single
-                          value, unless f2cl knows the function takes
-                          a scalar arg that is not modified.
-:PACKAGE                 A string or symbol specifying what package the
-                          resulting code should be in. (Basically puts a
-                          (in-package <p>) at the top.)
-:DECLAIM                 Declaim compilation options  (Basically puts a
-                          (declaim <declaim>) at the top.)
-:DECLARE-COMMON          When non-NIL, any structures defintions for common
-                          blocks are defined here. Otherwise, the structures
-                          for the common blocks are expected to be defined
-                          elsewhere.
-:FLOAT-FORMAT            Float format to use when printing the result.
-                          Default is *READ-DEFAULT-FLOAT-FORMAT*
-:COMMON-AS-ARRAY         Common blocks are created as a set of arrays, and the
-                          common block variables are offsets into the arrays.
-                          This mimics Fortran common block layouts.
-                          Default = NIL.
-:COMMON-BLOCK-FILE       If common blocks are to be declared, then
-                          each common block is written to a file whose name
-                          is the name of the common block, with the extension
-                          \"cmn\"
+  :VERBOSE                 verbose output. Default = NIL.
+  :PRUNE-LABELS            Prune unused labels. Default = NIL.
+  :INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be
+			    buggy.) Default = NIL
+  :AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
+			   Default = T.
+  :RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal
+			   parameters to functions. That is, any array
+			   length declarations are ignored if possible,
+			   like old Fortran used to. Default = T.
+  :COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements
+			    automatically coerce the RHS to the
+			    appropriate type for the assignment.  If NIL
+			    or :NEVER, coercion never happens.
+			    Otherwise, coercion happens as needed.  The
+			    Default = :AS-NEEDED
+  :EXTENSION               The extension to use for the output file, if needed.
+			    Defaults to *DEFAULT-LISP-EXTENSION* or \"lisp\"
+  :KEEP-TEMP-FILE          If T, the temporary file is not deleted.
+			    Default = NIL.
+  :ARRAY-TYPE              The type of array f2cl should use.  Should be
+			    :simple-array or :array.
+  :ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an
+			    array reference in a call to a subroutine or
+			    function, we are really passing a subarray
+			    to the routine instead of just the single
+			    value, unless f2cl knows the function takes
+			    a scalar arg that is not modified.
+  :PACKAGE                 A string or symbol specifying what package the
+			    resulting code should be in. (Basically puts a
+			    (in-package <p>) at the top.)
+  :DECLAIM                 Declaim compilation options  (Basically puts a
+			    (declaim <declaim>) at the top.)
+  :DECLARE-COMMON          When non-NIL, any structures defintions for common
+			    blocks are defined here. Otherwise, the structures
+			    for the common blocks are expected to be defined
+			    elsewhere.
+  :FLOAT-FORMAT            Float format to use when printing the result.
+			    Default is *READ-DEFAULT-FLOAT-FORMAT*
+  :COMMON-AS-ARRAY         Common blocks are created as a set of arrays, and the
+			    common block variables are offsets into the arrays.
+			    This mimics Fortran common block layouts.
+			    Default = NIL.
+  :COMMON-BLOCK-FILE       If common blocks are to be declared, then
+			    each common block is written to a file whose name
+			    is the name of the common block, with the extension
+			    \"cmn\"
+  :COPY-ARRAY-PARAMETER    In some Fortran code an array of one type is passed to
+			    a routine expecting a different type.  F2CL implements
+			    this by creating an array and copying the data.  The
+			    default is not to copy since it is relatively slow.
 "
 
 
@@ -325,7 +341,8 @@ INPUT-FILE               File containing Fortran code
 	(*equivalenced-vars* nil)
 	(*float-format* float-format)
 	(*common-blocks-as-arrays* common-as-array)
-	(*common-block-file* common-block-file))
+	(*common-block-file* common-block-file)
+	(*copy-array-parameter* copy-array-parameter))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -372,7 +389,7 @@ INPUT-FILE               File containing Fortran code
 		      :auto-save :relaxed-array-decls :coerce-assigns
 		      :keep-lisp-file :array-type :array-slicing :package
 		      :declaim :declare-common :float-format :common-as-array
-		      :common-block-file))
+		      :common-block-file :copy-array-parameter))
       (push (car key) result)
       (push (second key) result))))
 
@@ -394,57 +411,62 @@ INPUT-FILE               File containing Fortran code
 		     declare-common
 		     (float-format *read-default-float-format*)
 		     common-as-array
+		     copy-array-parameter
 		     &allow-other-keys)
   "Convert the Fortran to Common Lisp and compile the resulting Lisp file
 
-FILENAME                 File containing Fortran code
+  FILENAME                 File containing Fortran code
 
-:OUTPUT-FILE             File to contain Lisp code
+  :OUTPUT-FILE             File to contain Lisp code
 
-:VERBOSE                 verbose output. Default = NIL.
-:PRUNE-LABELS            Prune unused labels. Default = NIL.
-:INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be
-                          buggy.) Default = NIL
-:AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
-                          Default = T.
-:RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal
-                         parameters to functions.  Default = T.
-:COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements
-                          automatically coerce the RHS to the
-                          appropriate type for the assignment.  If NIL
-                          or :NEVER, coercion never happens.
-                          Otherwise, coercion happens as needed.  The
-                          Default = :AS-NEEDED
+  :VERBOSE                 verbose output. Default = NIL.
+  :PRUNE-LABELS            Prune unused labels. Default = NIL.
+  :INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be
+			    buggy.) Default = NIL
+  :AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
+			    Default = T.
+  :RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal
+			   parameters to functions.  Default = T.
+  :COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements
+			    automatically coerce the RHS to the
+			    appropriate type for the assignment.  If NIL
+			    or :NEVER, coercion never happens.
+			    Otherwise, coercion happens as needed.  The
+			    Default = :AS-NEEDED
 
-:KEEP-LISP-FILE          If T, the converted Lisp file is not deleted.
-                          Default = NIL.
-:ARRAY-TYPE              The type of array f2cl should use.  Should be
-                          'simple-array or 'array.
-:ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an
-                          array reference in a call to a subroutine or
-                          function, we are really passing a subarray
-                          to the routine instead of just the single
-                          value.
-:PACKAGE                 A string or symbol specifying what package the
-                          result code should be in. (Basically puts a
-                          (in-package <p>) at the top.)  Default:
-                          :common-lisp-user.
-:DECLAIM                 Declaim compilation options  (Basically puts a
-                          (declaim <declaim>) at the top.)
-:DECLARE-COMMON          When non-NIL, any structures for common blocks
-                          are declared here.  Otherwise, the
-                          structures for the common blocks are not
-                          declared.
-:FLOAT-FORMAT            Float format to use when printing the result.
-                          Default is *READ-DEFAULT-FLOAT-FORMAT*
-:COMMON-AS-ARRAY         Common blocks are created as a set of arrays, and the
-                          common block variables are offsets into the
-                          arrays.  This mimics Fortran common block
-                          layouts.  Default = NIL.
-:COMMON-BLOCK-FILE       If common blocks are to be declared, then
-                          each common block is written to a file whose name
-                          is the name of the common block, with the extension
-                          \"cmn\"
+  :KEEP-LISP-FILE          If T, the converted Lisp file is not deleted.
+			    Default = NIL.
+  :ARRAY-TYPE              The type of array f2cl should use.  Should be
+			    'simple-array or 'array.
+  :ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an
+			    array reference in a call to a subroutine or
+			    function, we are really passing a subarray
+			    to the routine instead of just the single
+			    value.
+  :PACKAGE                 A string or symbol specifying what package the
+			    result code should be in. (Basically puts a
+			    (in-package <p>) at the top.)  Default:
+			    :common-lisp-user.
+  :DECLAIM                 Declaim compilation options  (Basically puts a
+			    (declaim <declaim>) at the top.)
+  :DECLARE-COMMON          When non-NIL, any structures for common blocks
+			    are declared here.  Otherwise, the
+			    structures for the common blocks are not
+			    declared.
+  :FLOAT-FORMAT            Float format to use when printing the result.
+			    Default is *READ-DEFAULT-FLOAT-FORMAT*
+  :COMMON-AS-ARRAY         Common blocks are created as a set of arrays, and the
+			    common block variables are offsets into the
+			    arrays.  This mimics Fortran common block
+			    layouts.  Default = NIL.
+  :COMMON-BLOCK-FILE       If common blocks are to be declared, then
+			    each common block is written to a file whose name
+			    is the name of the common block, with the extension
+			    \"cmn\"
+  :COPY-ARRAY-PARAMETER    In some Fortran code an array of one type is passed to
+			    a routine expecting a different type.  F2CL implements
+			    this by creating an array and copying the data.  The
+			    default is not to copy since it is relatively slow.
 "
   (let ((lisp-file
 	 (f2cl filename :prune-labels prune-labels :include-comments include-comments
@@ -455,7 +477,8 @@ FILENAME                 File containing Fortran code
 	       :package package :declaim declaim
 	       :declare-common declare-common
 	       :float-format float-format
-	       :common-as-array common-as-array))
+	       :common-as-array common-as-array
+	       :copy-array-parameter copy-array-parameter))
 	(*read-default-float-format* float-format))
     (let ((compiler-keys (remove-f2cl-keys all-keys)))
       (multiple-value-prog1
@@ -1930,7 +1953,7 @@ FILENAME                 File containing Fortran code
 ;; That is if the actual arg is an array slice, but the function wants
 ;; a simple variable, we convert the array slice to an array
 ;; reference.  I think this is really nice.
-(defun massage-arglist (arglist info)
+(defun massage-arglist (arglist info copy-names)
   ;;(format t "info = ~A~%" info)
   (let ((arg-types (f2cl-finfo-arg-types info))
 	new-arglist)
@@ -1956,7 +1979,8 @@ FILENAME                 File containing Fortran code
 		    ;; handled elsewhere.
 		    t))))
       (do ((arg-type arg-types (cdr arg-type))
-	   (arg arglist (cdr arg)))
+	   (arg arglist (cdr arg))
+	   (copy copy-names (cdr copy)))
 	  ((null arg-type))
 	;;(format t "~A -> ~A~%" (car arg-type) (car arg))
 	(cond ((and (symbolp (car arg-type))
@@ -1991,7 +2015,7 @@ FILENAME                 File containing Fortran code
 				  :initial-element ,(car arg))
 		     new-arglist))
 	      (t
-	       (push (car arg) new-arglist)))))
+	       (push (or (car copy) (car arg)) new-arglist)))))
     (setf new-arglist (nreverse new-arglist))
     ;;(format t "new arglist = ~A~%" new-arglist)
     new-arglist))
@@ -2105,19 +2129,94 @@ FILENAME                 File containing Fortran code
 				       (if (not setter)
 					   varname))
 				   vnames all-setters)))
-	      (setters (remove nil all-setters)))
+	      (setters (remove nil all-setters))
+	      (actual-arg-types
+	       (mapcar #'(lambda (v)
+			   (multiple-value-bind (type arrayp)
+			       (get-fun-arg-type v)
+			     (if arrayp
+				 `(,*array-type* ,type (*))
+				 type)))
+		       arglist))
+	      (copy-name nil)
+	      (body nil))
 	  ;;(format t "ignored-vars = ~A~%" ignored-vars)
 	  ;;(format t "setters = ~A~%" setters)
 	  ;;(format t "arglist = ~A~%" arglist)
+	  ;;(format t "arglist types  = ~A~%" actual-arg-types)
+	  ;;(format t "declared types = ~A~%" (f2cl-finfo-arg-types finfo))
+
+	  (loop for count from 0
+	        for arg in arglist
+	        for actual-type in actual-arg-types
+	        for declared-type in (f2cl-finfo-arg-types finfo)
+	        do (cond ((or (typep arg 'string)
+			      (typep arg 'number))
+			  (push nil copy-name))
+			 ((subtypep actual-type declared-type)
+			  (push nil copy-name))
+			 ((and (subtypep declared-type 'array)
+			       (subtypep actual-type 'array))
+			  ;; Print a warning if the types don't match and we
+			  ;; aren't doing copying.
+			  (if *copy-array-parameter*
+			      (push (intern (concatenate 'string (symbol-name '#:%copy-)
+							 (cond ((symbolp arg)
+								(symbol-name arg))
+							       ((and (listp arg)
+								     (eq (car arg) 'array-slice))
+								(symbol-name (second arg)))
+							       (t
+								(error "Unknown name to use")))))
+				    copy-name)
+			      (progn
+				(push nil copy-name)
+				(format t "Warning:  Types of argument ~A in call to ~A do not match.~%  ~
+                                             Declared type: ~A~%  ~
+                                             Argument type: ~A~%"
+					count (car routine-name) declared-type actual-type))))))
+	  (setf copy-name (nreverse copy-name))
 	  (when (and *use-function-info* finfo)
-	    (setf arglist (massage-arglist arglist finfo)))
-	  (if setters
-	      `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
-		    (,@routine-name ,@arglist)
-		  (declare (ignore ,@ignored-vars))
-		  ,@setters
-		  ,@(if return (list 'ret-val))))
-	      `((,@routine-name ,@arglist))))))))
+	    (let ((new-args (massage-arglist arglist finfo copy-name)))
+	      (setf body (if setters
+			     `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
+				   (,@routine-name ,@new-args)
+				 (declare (ignore ,@ignored-vars))
+				 ,@setters
+				 ,@(if return (list 'ret-val))))
+			     `((,@routine-name ,@new-args))))))
+	  (cond ((some #'identity copy-name)
+		 ;; Some args don't match and we want to copy the item
+		 (multiple-value-bind (copy-to copy-from init-copy)
+		     (loop for arg in arglist
+			   for copy in copy-name
+			   for actual-type in actual-arg-types
+			   for declared-type in (f2cl-finfo-arg-types finfo)
+			   when copy
+			     collect `(f2cl-lib:f2cl-copy-seq ,copy ,arg
+							      ,(second declared-type)
+							      ,(second actual-type))
+			              into copy-to
+			     and collect `(f2cl-lib:f2cl-copy-seq ,arg ,copy
+								  ,(second actual-type)
+								  ,(second declared-type))
+			                  into copy-from
+			     and collect `(,copy (f2cl-lib:make-compatible-seq ',declared-type
+									       ,arg))
+			                  into init-copy
+			  finally (return (values copy-to copy-from init-copy)))
+		   (setf init-copy (remove-duplicates init-copy :key #'car))
+		   (setf copy-from (remove-duplicates copy-from :test #'equal))
+		   (setf copy-to (remove-duplicates copy-to :test #'equal))
+		   ;;(format t "init-copy = ~S~%" init-copy)
+		   ;;(format t "copy-from = ~S~%" copy-from)
+		   `((let (,@init-copy)
+		       ,@copy-to
+		       ,@body
+		       ,@copy-from))))
+		(t
+		 ;; Just return the body.
+		 body)))))))
 
 ;; Convert array references to an array slice, as appropriate. That
 ;; is, the array reference must be the actual arg. No arithmetic
@@ -3188,8 +3287,38 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.215 2009/04/07 22:05:21 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.216 2010/02/23 00:59:12 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.216  2010/02/23 00:59:12  rtoy
+;;; Support the Fortran capability of passing an array of one type
+;;; to a routine expecting a different type.  Currently only supports REAL
+;;; and COMPLEX arrays (and their double precison versions).
+;;;
+;;; NOTES:
+;;; o Update
+;;;
+;;; f2cl0.l:
+;;; o Export new symbols f2cl-copy-seq and make-compatible-seq.
+;;;
+;;; f2cl1.l:
+;;; o New variable *copy-array-parameter* for keeping track of the option
+;;;   for f2cl and f2cl-compile.
+;;; o Update f2cl and f2cl-compile to recognize :copy-array-parameter.
+;;; o Modify massage-arglist and generate-call-to-routine to handle the
+;;;   new :copy-array-parameter capability.
+;;;
+;;; f2cl5.l:
+;;; o Fix issue where quoted elements were modified.  They shouldn't be.
+;;; o Fix issue where (array simple-float (*)) would get erroneously
+;;;   converted to (array simple-float (f2cl-lib:int-mul)).  We want to
+;;;   leave bare * alone.
+;;;
+;;; macros.l:
+;;; o New macro f2cl-copy-seq to generate code to copy a sequence
+;;;   appropriately.
+;;; o New function to create a compatible array to support
+;;;   :copy-array-parameter.
+;;;
 ;;; Revision 1.215  2009/04/07 22:05:21  rtoy
 ;;; Binding of *read-default-float-format* was in the wrong place.  It
 ;;; needs to be in fortran-to-lisp, not translate-and-write-subprog, which

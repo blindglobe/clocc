@@ -1,8 +1,13 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.14 2008/02/28 20:01:06 rtoy Rel $
+;;; $Id: minpack.system,v 1.15 2010/02/23 01:00:42 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.15  2010/02/23 01:00:42  rtoy
+;;; Perhaps this is a bug in defsystem for Allegro, but set the source
+;;; extension for each module.  For some reason Allegro expects the
+;;; extension to be "l".
+;;;
 ;;; Revision 1.14  2008/02/28 20:01:06  rtoy
 ;;; Oops. tst-hybrd has its own defsystem.
 ;;;
@@ -91,7 +96,8 @@
     :source-pathname "minpack:"
     :components
     ((:file "minpack"
-		      :language :lisp)
+	    :source-extension "lisp"
+	    :language :lisp)
      (:module "minpack"
 	      :source-pathname ""
 	      :source-extension "f"
@@ -137,6 +143,7 @@
     :components
     ((:module "main"
 	      :source-pathname ""
+	      :source-extension "lisp"
 	      :package :minpack
 	      :components
 	      ((:file "run-minpack-tests")))
@@ -164,6 +171,7 @@
     :components
     ((:module "main"
 	      :source-pathname ""
+	      :source-extension "lisp"
 	      :package :minpack
 	      :components
 	      ((:file "run-minpack-tests")))

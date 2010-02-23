@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.216 2010/02/23 00:59:12 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.217 2010/02/23 03:37:24 rtoy Exp $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -189,6 +189,10 @@ incorrect, so use caution.")
   passing a REAL/REAL*8 array to a COMPLEX/COMPLEX*16 array and
   vice-versa. ")
 
+(defvar *promote-to-double* nil
+  "If non-NIL, REAL and COMPLEX variables and arrays are promoted to
+  type REAL*8 and COMPLEX*16")
+
 ;; For some reason Allegro needs this eval-when because it complains
 ;; about undefined slot accessors without this.
 (eval-when (compile load eval)
@@ -252,6 +256,7 @@ correctly"
 	     common-as-array
 	     common-block-file
 	     copy-array-parameter
+	     promote-to-double
 	     &allow-other-keys)
   "Fortran to Common Lisp converter
 
@@ -310,6 +315,8 @@ correctly"
 			    a routine expecting a different type.  F2CL implements
 			    this by creating an array and copying the data.  The
 			    default is not to copy since it is relatively slow.
+  :PROMOTE-TO-DOUBLE       Promote REAL and COMPLEX constants, variables, and
+                            arrays to REAL*8 and COMPLEX*16 types. 
 "
 
 
@@ -342,7 +349,8 @@ correctly"
 	(*float-format* float-format)
 	(*common-blocks-as-arrays* common-as-array)
 	(*common-block-file* common-block-file)
-	(*copy-array-parameter* copy-array-parameter))
+	(*copy-array-parameter* copy-array-parameter)
+	(*promote-to-double* promote-to-double))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -389,7 +397,7 @@ correctly"
 		      :auto-save :relaxed-array-decls :coerce-assigns
 		      :keep-lisp-file :array-type :array-slicing :package
 		      :declaim :declare-common :float-format :common-as-array
-		      :common-block-file :copy-array-parameter))
+		      :common-block-file :copy-array-parameter :promote-to-double))
       (push (car key) result)
       (push (second key) result))))
 
@@ -412,6 +420,7 @@ correctly"
 		     (float-format *read-default-float-format*)
 		     common-as-array
 		     copy-array-parameter
+		     promote-to-double
 		     &allow-other-keys)
   "Convert the Fortran to Common Lisp and compile the resulting Lisp file
 
@@ -467,6 +476,8 @@ correctly"
 			    a routine expecting a different type.  F2CL implements
 			    this by creating an array and copying the data.  The
 			    default is not to copy since it is relatively slow.
+  :PROMOTE-TO-DOUBLE       Promote REAL and COMPLEX constants, variables, and
+                            arrays to REAL*8 and COMPLEX*16 types. 
 "
   (let ((lisp-file
 	 (f2cl filename :prune-labels prune-labels :include-comments include-comments
@@ -478,7 +489,8 @@ correctly"
 	       :declare-common declare-common
 	       :float-format float-format
 	       :common-as-array common-as-array
-	       :copy-array-parameter copy-array-parameter))
+	       :copy-array-parameter copy-array-parameter
+	       :promote-to-double promote-to-double))
 	(*read-default-float-format* float-format))
     (let ((compiler-keys (remove-f2cl-keys all-keys)))
       (multiple-value-prog1
@@ -627,7 +639,7 @@ correctly"
 	;; marker is given.  However, when writing, we honor
 	;; *float-format* so that the generated output has the desired
 	;; style for printed numbers.
-	(*read-default-float-format* 'single-float)
+	(*read-default-float-format* (maybe-promote-type 'single-float))
 	*common_array_dims* *format_stmts* *statement-labels*)
     (when *verbose*
       (format t "beginning the main translation ...~%"))
@@ -1676,6 +1688,17 @@ correctly"
 
 ;------------------------------------------------------------------------------
 
+(defun maybe-promote-type (type)
+  (if *promote-to-double*
+      (cond ((or (eq type 'real)
+		 (eq type 'single-float))
+	     'double-float)
+	    ((eq type 'complex8)
+	     'complex16)
+	    (t
+	     type))
+      type))
+
 ;declaration
 (defun parse-declaration (x)		; x is the line
   (setq *declared_vbles*
@@ -1717,7 +1740,7 @@ correctly"
     (when type
       (cond ((symbolp (second type))
 	     (setq *explicit_vble_decls* 
-		   (build_decl_list *explicit_vble_decls* (second type) (cdr x))))
+		   (build_decl_list *explicit_vble_decls* (maybe-promote-type (second type)) (cdr x))))
 	    ((consp (second type))
 	     (funcall (second (second type)) x))
 	    (t
@@ -3011,15 +3034,15 @@ Senac syntax:... | op '| ...|)))
 	((eq (car x) 'integer)
 	 (append '(integer4) (cdr x)))
 	((equalp (subsequence x 0 3) '(complex * 8))
-	 (append '(complex8) (subsequence x 3)))
+	 (append (list (maybe-promote-type 'complex8)) (subsequence x 3)))
 	((equalp (subsequence x 0 3) '(complex * 16))
 	 (append '(complex16) (subsequence x 3)))
 	((and (listp (car x)) (eq (caar x) 'complex))
-	 (append '(complex8) (cdr x)))
+	 (append (list (maybe-promote-type 'complex8)) (cdr x)))
 	((and (listp (car x)) (eq (caar x) 'character))
 	 (append `(character ,(third (car x))) (cdr x)))
 	((and (listp (car x)) (eq (caar x) 'real))
-	 (append '(single-float) (cdr x)))
+	 (append (list (maybe-promote-type 'single-float)) (cdr x)))
 	((and (listp (car x)) (eq (caar x) 'integer))
 	 (append '(fixnum) (cdr x)))
 	((eq (car x) 'double) 
@@ -3287,8 +3310,23 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.216 2010/02/23 00:59:12 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.217 2010/02/23 03:37:24 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.217  2010/02/23 03:37:24  rtoy
+;;; Add :PROMOTE-TO-DOUBLE option to promote all single precision
+;;; variables and constants to double precision.
+;;;
+;;; NOTES:
+;;; o Update
+;;;
+;;; f2cl1.l:
+;;; o Add :PROMOTE-TO-DOUBLE keyword to F2CL and F2CL-COMPILE.
+;;; o Add MAYBE-PROMOTE-TYPE to promote the specified type if specified.
+;;;
+;;; f2cl5.l:
+;;; o Update declarations and initializers to promote the declaration and
+;;;   initial value if needed.
+;;;
 ;;; Revision 1.216  2010/02/23 00:59:12  rtoy
 ;;; Support the Fortran capability of passing an array of one type
 ;;; to a routine expecting a different type.  Currently only supports REAL

@@ -3,6 +3,9 @@
 Changes:
 Feb 2010
 --------
+o Add :PROMOTE-TO-DOUBLE option which promotes all single precision
+  variables to double precision.
+
 o Some old-style Fortran code passes arrays of different types to
   routines expecting a different type.  For example, passing a COMPLEX
   array to a routine expecting a REAL array.  This works in Fortran,

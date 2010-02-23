@@ -5,6 +5,9 @@ various sources and are used to test f2cl.  They've been a great way
 of finding bugs and inadequacies in f2cl.  If they're also useful
 packages, that's just a side benefit. :-)
 
+Some package have their own licenses.  You must obtain the license
+yourself if you want to use the package.
+
 Packages:
 
 quadpack	Adaptive integration package
@@ -44,3 +47,9 @@ colnew		COLNEW package from netlib for solving boundary-value
 
 donlp2		The Fortran source has been removed at the request of
 		the author.
+
+fftpack5	FFTPACK for FFTs, single-precision.  See
+                <http://www.cisl.ucar.edu/css/software/fftpack5/index.html>.
+                If you want to use this for your work, you need to
+                obtain a license.  There are some issues with this
+                package, but the complex 1D FFT appears to work.

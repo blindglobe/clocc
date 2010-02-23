@@ -7,14 +7,20 @@
 						  :name :wild :type :wild)
 				   *load-pathname*))))
 
+(defun fftpack-compile (input-file &rest all-keys)
+  (apply #'f2cl:f2cl-compile input-file :package :fftpack5 all-keys))
+
 (mk:define-language :f2cl
-    :compiler #'f2cl:f2cl-compile
+    :compiler #'fftpack-compile
     :source-extension "f")
 
 (mk:defsystem fftpack5
     :source-pathname "fftpack5:"
     :components
-    ((:module "source"
+    ((:file "fftpack5"
+	    :source-extension "lisp"
+	    :language :lisp)
+     (:module "fftpack5"
 	      :source-pathname ""
 	      :source-extension "f"
 	      :language :f2cl

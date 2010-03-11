@@ -641,7 +641,7 @@ code.
 ;; limits declared in http.lisp
 (defun reason-not-to-accept (connection)
   (loop for (nbits limit) in
-        #+ignore '((32 4) (24 8) (16 16) (8 32) (0 64)) do
+        #+ignore '((32 4) (24 8) (16 16) (8 32) (0 64)) 
 	'((32 8) (24 16) (16 24) (8 32) (0 64)) do
 	(let ((count (loop for c in *connections* count
 			   (= (ash (connection-ipaddr connection) (- nbits 32))

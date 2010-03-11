@@ -635,8 +635,14 @@ code.
 	(progn (send-string connection (format nil "~A" complaint)) nil)
       t)))
 
+;; 2010/03/10 modern web browsers tend to use > 4 connections, at least
+;; for pages containing a lot of internal references, typically images
+;; perhaps this should be specialized on connection type with the larger
+;; limits declared in http.lisp
 (defun reason-not-to-accept (connection)
-  (loop for (nbits limit) in '((32 4) (24 8) (16 16) (8 32) (0 64)) do
+  (loop for (nbits limit) in
+        #+ignore '((32 4) (24 8) (16 16) (8 32) (0 64)) do
+	'((32 8) (24 16) (16 24) (8 32) (0 64)) do
 	(let ((count (loop for c in *connections* count
 			   (= (ash (connection-ipaddr connection) (- nbits 32))
 			      (ash (connection-ipaddr c) (- nbits 32))))))

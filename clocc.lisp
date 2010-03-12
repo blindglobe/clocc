@@ -1,6 +1,6 @@
 ;;; bugfixes
 ;;;
-;;; Copyright (C) 1997-2008 by Sam Steingold.
+;;; Copyright (C) 1997-2008, 2010 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.24 2008/09/19 15:51:57 sds Exp $
+;;; $Id: clocc.lisp,v 1.25 2010/03/12 00:21:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -106,8 +106,7 @@
 ;;;
 
 (defvar *clocc-root*
-  #-(or win32 winnt mswindows cygwin) "/usr/local/src/clocc/"
-  #+(or win32 winnt mswindows cygwin) "d:/gnu/clocc/"
+  (namestring (make-pathname :name nil :type nil :defaults *load-truename*))
   "*The root CLOCC directory.")
 
 (setf (logical-pathname-translations "clocc")
